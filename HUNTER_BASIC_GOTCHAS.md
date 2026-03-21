@@ -79,6 +79,18 @@ Use `WRITE#` to create data files — it automatically quotes strings.
 
 > **Manual refs:** §4.13 File Handling, §5.10.9 INPUT#, §5.17.13 PRINT#
 
+### BAS LOAD and programs
+
+`.HBA` files transferred to the Hunter (e.g. via HCOM) display correctly
+when checked with CP/M `TYPE`. The file checks OK on disk, but `LOAD`
+inside BAS can corrupt it — line 10 of HIMAGE.HBA was affected (quirk?).
+Retyping the affected line fixed it.
+
+`,A` flag is **not** supported (`LOAD "file",A` gives `*STX Error`).
+
+**Alternative:** Send the file via RS-232 while in BAS, so each numbered
+line is entered directly by the interpreter.
+
 ---
 
 ## Error Codes
@@ -96,6 +108,7 @@ Hunter BASIC errors are 3-character codes (§4.14, page 4-47):
 | TYP | 15 | Type Mismatch | String where number expected (or vice versa) |
 | FNF | 18 | File Not Found | Filename wrong or file doesn't exist |
 | FOP | 20 | File Already Open | Forgot to CLOSE before re-opening |
+| RD | — | Read Data Error | READ past end of DATA — no more DATA values available |
 | DSK | 26 | Disk Access Error | File system problem |
 
 > **The DIM Error trap:** If a program crashes mid-run, arrays from the
@@ -195,8 +208,6 @@ If you can't get to the prompt, remove the battery to force a reset.
 
 ---
 
----
-
 ## Verification Status
 
 | Item | Status |
@@ -212,6 +223,7 @@ If you can't get to the prompt, remove the battery to force a reset.
 | EOF unreliable at end of file | **Confirmed** — CP/M record padding causes false reads |
 | POINT vs PSET for drawing | **Confirmed** on hardware (STX Error using POINT) |
 | PSET(x,y) draws pixels | **Confirmed** on hardware (terrain profile plotted) |
+| LOAD works with ASCII .HBA files | **Confirmed** — minor corruption at line 10 (quirk?), `,A` not supported |
 | Power-off POKE inhibit | **Confirmed** on hardware (stuck power button) |
 | Power-off POKE recovery | **Confirmed** on hardware |
 | DIM Error after crash / need NEW | **Confirmed** on hardware |
@@ -221,6 +233,9 @@ If you can't get to the prompt, remove the battery to force a reset.
 > **TERRAIN.HBA partially working on hardware** (March 2026). Menu, file
 > loading, contour extraction, and profile plotting confirmed. LOS line,
 > dB calculation, and some refinements still in progress.
+>
+> **HIMAGE.HBA confirmed working** (March 2026). Full 240×64 image renders
+> correctly when sent via serial to BASIC interactive mode.
 
 *Last updated: March 2026*
 *Source: Husky Hunter Manual V09F 1984 + hardware testing*
