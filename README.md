@@ -3,12 +3,18 @@
 Programs and tools for the **Husky Hunter** portable computer (NSC800-4 @ 4MHz, DEMOS 2.2 / CP/M 2.2, 240×64 LCD).
 
 ![Terrain profile on Husky Hunter](Progs/images/20260320_234803.jpg)
+![Image on Husky Hunter](Progs/images/20260321_120202~2.jpg)
 
 ## Projects
 
 | Project | Description | Status |
 | ------- | ----------- | ------ |
 | [Terrain](Progs/Terrain/) | Point-to-point radio link profiler — automatic terrain profile extraction from contour data, LOS overlay, dB path loss | Working on hardware |
+| [image_writer](Progs/image_writer/) | PNG/JPEG to Hunter BASIC image converter — Atkinson/Floyd-Steinberg/ordered/threshold dithering for 240×64 LCD | Working |
+
+## Reference
+
+- [HUNTER_BASIC_GOTCHAS.md](HUNTER_BASIC_GOTCHAS.md) — Hunter BASIC syntax differences, reserved words, and quirks discovered during hardware testing
 
 ## The Husky Hunter
 

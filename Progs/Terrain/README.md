@@ -253,7 +253,6 @@ No build required. `TERRAIN.HBA` is a Hunter BASIC source file:
 | `TERRAIN.HBA` | Hunter BASIC source — terrain profiler V1.0 |
 | `asc2contour.py` | Python — converts OS Terrain 50 .asc grids to CONTOUR.DAT |
 | `CONTOUR.DAT` | Contour dataset — TQ00 (North Downs, 10x10 km), development/limited area, production settings `-i 10 -s 200 -m 10` |
-| `HUNTER_BASIC_GOTCHAS.md` | Hunter BASIC syntax differences discovered during hardware testing |
 | `README.md` | This file |
 
 ### Subdirectories
@@ -293,7 +292,7 @@ python asc2contour.py TQ00.asc TQ01.asc TQ10.asc TQ11.asc -i 10 -s 200 -m 10 -o 
 
 See `Test/README.md` for test coordinates and expected results.
 
-See `HUNTER_BASIC_GOTCHAS.md` for all Hunter BASIC syntax differences discovered during hardware testing.
+See [HUNTER_BASIC_GOTCHAS.md](../../HUNTER_BASIC_GOTCHAS.md) for all Hunter BASIC syntax differences discovered during hardware testing.
 
 ## License
 
