@@ -1,0 +1,30 @@
+# Husky Hunter — Programs for the 1983 Ruggedised Field Computer
+
+Programs and tools for the **Husky Hunter** portable computer (NSC800-4 @ 4MHz, DEMOS 2.2 / CP/M 2.2, 240×64 LCD).
+
+![Terrain profile on Husky Hunter](Progs/images/20260320_234803.jpg)
+
+## Projects
+
+| Project | Description | Status |
+| ------- | ----------- | ------ |
+| [Terrain](Progs/Terrain/) | Point-to-point radio link profiler — automatic terrain profile extraction from contour data, LOS overlay, dB path loss | Working on hardware |
+
+## The Husky Hunter
+
+Ruggedised portable field computer by DVW Microelectronics / Husky Computers Ltd, Coventry (1983).
+
+| Spec | Detail |
+| ---- | ------ |
+| CPU | NSC800-4 @ 4 MHz (CMOS Z80-compatible) |
+| RAM | 80K / 144K / 208K, battery-backed CMOS |
+| ROM | 48K firmware in EPROMs |
+| Display | 240 × 64 dot LCD |
+| Serial | RS-232 up to 4800 baud |
+| OS | DEMOS 2.2 (CP/M 2.2 derivative, RAM-disk) |
+
+Micro Live S02E02: https://www.youtube.com/watch?v=y1ZBr3NInow&t=739s
+
+## License
+
+MIT License. See [Progs/Terrain/LICENSE](Progs/Terrain/LICENSE) for details.
