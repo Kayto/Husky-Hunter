@@ -4,7 +4,7 @@ A fully self-contained Hunter BASIC program that predicts tides on-device. No PC
 
 ## Status
 
-**V1.3 — 28 Mar 2026.** Hardware verified. Portsmouth constants calibrated against UKHO-derived reference data for improved accuracy. Precision-safe astronomical arguments.
+**V1.3 — 28 Mar 2026.** Hardware verified. Portsmouth constants calibrated against UKHO-derived reference data for improved accuracy. Precision-safe astronomical arguments. Can't guarantee any unchecked wider dates work and the accuracy of all...which reminds me....
 
 **Disclaimer:** This program is conceptual for educational and hobbyist use only. Predictions are approximate and unverified and must not be relied upon for navigation, safety, or any activity where life or property may be at risk. Always consult official tide tables and local harbour authorities for real-world decisions. The authors accept no liability for any loss or damage arising from the use of this software.
 
