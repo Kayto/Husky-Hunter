@@ -214,15 +214,6 @@ Double-click `SyncToHunter.bat` (or run from a command prompt). It will:
 | `SyncToHunter.ps1` | Dev sync script |
 | `README.md` | This file |
 | `HSYNC\` | Your sync files (created on first sync run) |
-| `hcomw\HCOM.DOS\HCOM.EXE` | Interactive file manager |
-| `hcomw\HCOM.DOS\HCOM.CFG` | HCOM configuration |
-| `hcomw\HCOM.DOS\HCOM.HLP` | HCOM help file |
-| `hcomw\HCOM.DOS\CMDHCOM.EXE` | Command-line transfer tool |
-| `hcomw\HCOM.DOS\CMDHCOM.CFG` | CMDHCOM configuration |
-| `hcomw\HCOM.DOS\HCS.COM` | HCOM communications server |
-| `hcomw\HCOM.DOS\HUNTER.BIN` | Hunter / Hunter 2 firmware |
-| `hcomw\HCOM.DOS\HAWK.BIN` | Hawk firmware |
-| `hcomw\HCOM.DOS\H16FS2.BIN` | Hunter 16 / FS/2 firmware |
 
 Auto-generated at runtime (not included in the distribution):
 
