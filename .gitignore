@@ -42,5 +42,9 @@ HuskyHCOM/HSYNC/*
 HuskyHCOM/hcom-settings.ini
 HuskyHCOM/hunter-sync.manifest
 
+# Tide development scripts
+Progs/Tide/*.py
+Progs/Tide/__pycache__/
+
 # Archives
 *.7z
