@@ -4,6 +4,7 @@ Programs and tools for the **Husky Hunter** portable computer (NSC800-4 @ 4MHz, 
 
 ![Terrain profile on Husky Hunter](Progs/images/20260320_234803.jpg)
 ![Image on Husky Hunter](Progs/images/20260321_120202~2.jpg)
+![Husky Hunter projects collage](Progs/images/collage.jpg)
 
 ## Projects
 
@@ -11,6 +12,7 @@ Programs and tools for the **Husky Hunter** portable computer (NSC800-4 @ 4MHz, 
 | ------- | ----------- | ------ |
 | [Terrain](Progs/Terrain/) | Point-to-point radio link profiler — automatic terrain profile extraction from contour data, LOS overlay, dB path loss | Working on hardware |
 | [image_writer](Progs/image_writer/) | PNG/JPEG to Hunter BASIC image converter — Atkinson/Floyd-Steinberg/ordered/threshold dithering for 240×64 LCD | Working |
+| [HuskyHCOM](HuskyHCOM/) | HCOM file transfer launcher for modern 64-bit Windows — DOSBox-based with interactive setup, auto COM port detection, and dev sync workflow | Working |
 
 ## Reference
 

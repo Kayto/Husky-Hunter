@@ -30,5 +30,17 @@ Progs/Terrain/DIAGFILE.HBA
 # ROM analysis (private)
 Progs/Terrain/Orig_ROMS/ROM_ANALYSIS.md
 
+# HCOM distribution files (downloaded separately)
+HuskyHCOM/hcomw/*
+!HuskyHCOM/hcomw/.gitkeep
+
+# HSYNC files (device-specific, synced at runtime)
+HuskyHCOM/HSYNC/*
+!HuskyHCOM/HSYNC/.gitkeep
+
+# HCOM runtime config (auto-generated, machine-specific)
+HuskyHCOM/hcom-settings.ini
+HuskyHCOM/hunter-sync.manifest
+
 # Archives
 *.7z
