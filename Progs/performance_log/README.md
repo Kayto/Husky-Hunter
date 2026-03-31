@@ -13,7 +13,7 @@ Real-time PC CPU and memory usage display on the Hunter's 240×64 LCD, fed over 
 ```
 PC (running):                          Hunter (displaying):
 
-feed.py                                RUN STRIP.HBA
+feed.py                                RUN LOG.HBA
   reads CPU% + MEM%                          ↓
   every ~1 second                      Waits for serial data
         ↓                                    ↓
