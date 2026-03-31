@@ -36,6 +36,10 @@ Ruggedised portable field computer by DVW Microelectronics / Husky Computers Ltd
 
 Micro Live S02E02: https://www.youtube.com/watch?v=y1ZBr3NInow&t=739s
 
+## Acknowledgements
+
+* [TheEPROM9 — Husky Hunter/Hunter 2](https://www.theeprom9.co.uk/vintage-computers/husky-computer-archive/husky-hunterhunter-2) — hardware teardowns, ROM dumps, reverse engineering efforts, demo code listings, and LCD datasheet
+
 ## License
 
 MIT License. See [Progs/Terrain/LICENSE](Progs/Terrain/LICENSE) for details.
