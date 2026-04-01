@@ -16,6 +16,7 @@ Programs and tools for the **Husky Hunter** portable computer (NSC800-4 @ 4MHz, 
 | [Tide](Progs/Tide/) | Self-contained tidal predictor — computes and plots 24-hour tide curves from 7 harmonic constituents, 6 built-in UK ports | Working on hardware |
 | [news\_feed](Progs/news_feed/) | BBC News headline ticker — PC fetches RSS, formats and sends headlines over RS-232 for LCD display | Working on hardware |
 | [performance\_log](Progs/performance_log/) | Real-time PC performance logger — streams CPU and memory usage over RS-232 to the Hunter's LCD | Working on hardware |
+| [log\_file](Progs/log_file/) | Performance file logger — logs CPU and memory samples to PERFLOG.DAT on the Hunter with menu-driven readback | Working on hardware |
 
 ## Reference
 

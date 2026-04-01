@@ -195,9 +195,18 @@ Programs that loop forever (e.g. NEWS.HBA, LOG.HBA) rely on BREAK to exit. BREAK
 SCREEN 0:PRINT CHR$(1);:KEY ON:CURON
 ```
 
+### RUN resets file handles
+
+Looks like `RUN` closes all open file channels automatically. If a program has a file open (e.g. `OPEN "DATA" FOR OUTPUT AS #1`) and you press BREAK, typing `RUN` to restart will cleanly reset the file state — no `*FOP
+Error`. Discovered with LOGF.HBA: BREAK during logging, then `RUN`
+and selecting option 2 (read back) opens the file without error.
+
+This means `GOTO` or `CONT` after BREAK **would** hit `*FOP Error`
+(the channel is still open), but `RUN` is safe.
+
 > **Best practice:** Match every `SCREEN 1`, `CUROFF`, and `KEY OFF`
 > with a corresponding restore in an exit routine. For infinite-loop
-> programs,  manual cleanup may be needed after BREAK.
+> programs, manual cleanup may be needed after BREAK.
 
 - - -
 
