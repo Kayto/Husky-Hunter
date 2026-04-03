@@ -1,4 +1,4 @@
-; Y2KFIX.ASM — Permanent Y2K century fix (Z80/NSC800)
+; Y2KFIX.ASM — Permanent Y2K century fix (8080/NSC800)
 ; By Nicola Cowie
 ; For Husky Hunter running DEMOS (CP/M 2.2)
 ; Assemble as Y.COM — run once after power on
@@ -15,9 +15,9 @@
 
         ORG     100H            ; CP/M .COM load address
 
-START:  LD      BC, 3230H       ; ASCII "20" (B='2', C='0')
-        LD      HL, 0FA8BH      ; Century word in RAM
-        LD      (HL), C          ; Low byte  '0' -> 0FA8Bh
-        INC     HL
-        LD      (HL), B          ; High byte '2' -> 0FA8Ch
-        JP      0                ; Warm boot back to DEMOS
+START:  LXI     B, 3230H        ; ASCII "20" (B='2', C='0')
+        LXI     H, 0FA8BH       ; Century word in RAM
+        MOV     M, C             ; Low byte  '0' -> 0FA8Bh
+        INX     H
+        MOV     M, B             ; High byte '2' -> 0FA8Ch
+        JMP     0                ; Warm boot back to DEMOS
