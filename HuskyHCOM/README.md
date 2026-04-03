@@ -39,8 +39,10 @@ The final folder structure should look like this:
 HuskyHCOM\
   LaunchHCOM.bat          ← Double-click this to start
   LaunchHCOM.ps1          ← Launcher script (do not edit)
-  SyncToHunter.bat        ← Dev sync launcher
+  SyncToHunter.bat        ← Dev sync launcher (push to Hunter)
   SyncToHunter.ps1        ← Dev sync script
+  SyncFromHunter.bat      ← Dev sync launcher (pull from Hunter)
+  SyncFromHunter.ps1      ← Dev sync script
   README.md               ← This file
   hcomw\                  ← Extracted from hcomw.zip (do not modify)
     HCOM.DOS\
@@ -129,7 +131,10 @@ LaunchHCOM.bat --setup
 
 ## Dev Sync Workflow
 
-If you develop software for the Hunter, `SyncToHunter.bat` provides fully automated sync using CMDHCOM commands — no manual HCOM interaction needed.
+If you develop software for the Hunter, two scripts provide fully automated sync using CMDHCOM commands — no manual HCOM interaction needed:
+
+- **`SyncToHunter.bat`** — pushes changes from `HSYNC\` to the Hunter
+- **`SyncFromHunter.bat`** — pulls changes from the Hunter into `HSYNC\`
 
 ### Setup
 
@@ -176,6 +181,30 @@ Double-click `SyncToHunter.bat` (or run from a command prompt). It will:
 - The script won't overwrite HCOM program files — it blocks filenames like `HCOM.EXE`, `CMDHCOM.EXE`, etc.
 - Modified files are handled by deleting the old version on the Hunter first, then uploading the new one.
 - The sync manifest is stored in `hunter-sync.manifest` — delete it to start fresh.
+
+---
+
+## Sync From Hunter
+
+`SyncFromHunter.bat` pulls files from the Hunter into `HSYNC\`. Only new or modified files are updated — existing matching files are left untouched.
+
+### How it works
+
+1. **Double-click `SyncFromHunter.bat`**
+2. Confirm the Hunter is connected, powered on, and running HCOM
+3. Press `Y` to start the download
+4. The script runs `CMDHCOM /RX=*.*` via DOSBox to download all files from the Hunter
+5. Downloaded files are compared against `HSYNC\`:
+   - **New files** — moved into `HSYNC\`
+   - **Updated files** (different size or content) — overwrite the existing copy in `HSYNC\`
+   - **Unchanged files** — skipped (cleaned up from the staging area)
+6. The sync manifest is updated to reflect the current state of `HSYNC\`
+
+### Notes
+
+- Run `LaunchHCOM.bat` at least once before using this script (to configure DOSBox and serial port).
+- HCOM program files (`HCOM.EXE`, `CMDHCOM.EXE`, etc.) are never synced — the script protects them automatically.
+- Content comparison uses MD5 hashing for same-size files to detect changes accurately.
 
 ---
 
