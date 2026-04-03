@@ -1,0 +1,22 @@
+1 REM DAYFIX.HBA v1.0 — SET DAY OF WEEK
+2 REM By kayto 02/04/2026
+3 REM For Husky Hunter (NSC800, 240x64 LCD)
+4 REM =====================================
+10 PRINT "Current: ";DAY$
+20 PRINT
+30 PRINT "Day? 1)Mon 2)Tue 3)Wed 4)Thu 5)Fri 6)Sat 7)Sun"
+40 A$=INKEY$:IF A$="" THEN 40
+50 IF A$="1" THEN DAY$="MON"
+60 IF A$="2" THEN DAY$="TUE"
+70 IF A$="3" THEN DAY$="WED"
+80 IF A$="4" THEN DAY$="THU"
+90 IF A$="5" THEN DAY$="FRI"
+100 IF A$="6" THEN DAY$="SAT"
+110 IF A$="7" THEN DAY$="SUN"
+120 IF ASC(A$)<49 OR ASC(A$)>55 THEN 40
+130 PRINT
+140 PRINT "Set: ";DAY$
+150 PRINT
+160 PRINT "Any key to exit...";
+170 A$=INKEY$:IF A$="" THEN 170
+180 SYSTEM
