@@ -5,6 +5,37 @@ hardware testing on a Husky Hunter (DEMOS 2.2, V09F ROM). Some may be obvious if
 
 - - -
 
+## Contents
+
+- [Reserved Words / Built-in Constants](#reserved-words--built-in-constants)
+- [File I/O Syntax](#file-io-syntax)
+  - [OPEN](#open)
+  - [INPUT from file](#input-from-file)
+  - [WRITE to file](#write-to-file)
+  - [CLOSE](#close)
+  - [Data file string quoting](#data-file-string-quoting)
+  - [BAS LOAD and programs](#bas-load-and-programs)
+- [Error Codes](#error-codes)
+- [Hard Reset (Lockup Recovery)](#hard-reset-lockup-recovery)
+- [Power-Off Inhibit](#power-off-inhibit)
+- [Battery & Power Consumption](#battery--power-consumption)
+  - [Use `INCHR` instead of `INKEY$` for key-press waits](#use-inchr-instead-of-inkey-for-key-press-waits)
+- [Performance](#performance)
+  - [Use `OPCHR` instead of `PRINT CHR$()`](#use-opchr-instead-of-print-chr)
+- [Clean Exit — Restoring Display State](#clean-exit--restoring-display-state)
+  - [What needs restoring](#what-needs-restoring)
+  - [Recommended exit pattern](#recommended-exit-pattern)
+  - [What happens if you don't clean up](#what-happens-if-you-dont-clean-up)
+  - [BREAK exits dirty](#break-exits-dirty)
+  - [RUN resets file handles](#run-resets-file-handles)
+- [Serial Port (RS-232)](#serial-port-rs-232)
+  - [LINPUT for RS-232 receive](#linput-for-rs-232-receive)
+- [Graphics](#graphics)
+- [Miscellaneous](#miscellaneous)
+- [Verification Status](#verification-status-randomly-complete)
+
+- - -
+
 ## Reserved Words / Built-in Constants
 
 | Word | Type | Trap |
@@ -130,6 +161,20 @@ Hunter BASIC errors are 3-character codes (§4.14, page 4-47):
 
 - - -
 
+## Hard Reset (Lockup Recovery)
+
+If the Hunter locks up due to bad code and cannot be interrupted normally:
+
+1. Power off.
+2. Power on while holding **Ctrl** and **C** simultaneously. The Hunter should beep twice.
+3. Release all keys.
+4. Enter the code **56580** — the Hunter should reboot.
+
+> This bypasses the running program and forces a cold reset. Useful when a
+> runaway loop or bad POKE makes the keyboard unresponsive.
+
+- - -
+
 ## Power-Off Inhibit
 
 ``` basic
@@ -152,6 +197,68 @@ POKE 63416,0:POKE 63419,0
 If you can't get to the prompt, remove the battery to force a reset.
 
 > **Best practice:** Add `ON ERROR` handling that restores these POKEs, or avoid inhibiting power-off during development/debugging.
+
+- - -
+
+## Battery & Power Consumption
+
+### Use `INCHR` instead of `INKEY$` for key-press waits
+
+``` basic
+' BAD — burns battery: interpreter loops constantly
+DO : WHILE INKEY$="" : WEND : LOOP
+
+' GOOD — CPU drops to low-power mode until key arrives
+INCHR,A
+```
+
+`INKEY$=""` keeps the BASIC interpreter executing continuously,
+preventing the CPU from entering low-power mode. `INCHR,A` suspends
+execution and lets the hardware wait for a keypress with the CPU mostly
+idle. The screen stays on but current draw is significantly reduced.
+
+**`INCHR` syntax (§5.10.3):**
+
+```basic
+INCHR varname               ' wait, no prompt — variable gets decimal ASCII value
+INCHR "prompt";varname      ' wait with prompt string
+INCHR,varname               ' wait, suppress ? prompt character
+```
+
+- The variable is **numeric** — it receives the decimal ASCII value of the
+  key pressed (e.g. `A`=65).  Using a string variable (`K$`) causes `*STX Error`.
+- Does not wait for ENTER — returns immediately on any single key.
+- Escape returns 27.  SHIFT/HELP/CTRL/POWER return no value.
+
+> **Rule of thumb:** any time you need to wait for user input, prefer
+> `INCHR` over polling `INKEY$`.
+
+- - -
+
+## Performance
+
+### Use `OPCHR` instead of `PRINT CHR$()`
+
+Each BASIC statement is a separate token. Every call to `PRINT CHR$(n)`
+requires the interpreter to process *two* tokens (`PRINT` and `CHR$`),
+plus a function call, plus the numeric argument. `OPCHR` is a **single
+token** that sends one or more raw character codes to the screen in one
+pass:
+
+``` basic
+' SLOW — two tokens + function-call overhead, repeated per character:
+PRINT CHR$(1) : PRINT CHR$(15) : PRINT CHR$(5) : PRINT CHR$(5)
+
+' FAST — one token, all characters in a single statement:
+OPCHR1,15,5,5
+```
+
+The example above clears the screen (`CHR$(1)`) then moves the cursor
+to column 5, row 5 (`CHR$(15)` = cursor-position command, followed by
+the X and Y coordinates).
+
+`OPCHR` is especially worthwhile in loops or any code that draws to
+the screen repeatedly.
 
 - - -
 
@@ -264,6 +371,7 @@ Press BREAK to escape.
 
 ## Miscellaneous
 
+* **`MOD` operator does not exist:** Hunter BASIC has no `MOD` keyword — using it causes `*STX Error`. Use `INT(A/B)` arithmetic instead: `M = A - INT(A/B)*B`
 * **Max files:** Default MAXFILES is 1. Set `MAXFILES=n` before opening
 multiple files.
 * **`NEW` clears everything:** Variables, arrays, and the program. Use it
@@ -307,6 +415,9 @@ on the line produce `?extra ignored`. Missing fields cause `?REDO from start` an
 | POINT vs PSET for drawing | **Confirmed** on hardware (STX Error using POINT) |
 | PSET(x,y) draws pixels | **Confirmed** on hardware (terrain profile plotted) |
 | LOAD works with ASCII .HBA files | **Confirmed** — minor corruption at line 10 (quirk?), `,A` not supported |
+| Hard reset via Ctrl+C on power-on + code 56580 | **Confirmed** on hardware |
+| INCHR low-power wait vs INKEY$ polling | **Confirmed** on hardware — battery drain noticeable with INKEY$ loop |
+| OPCHR faster than PRINT CHR$() | From BASIC token architecture — not timed on hardware |
 | Power-off POKE inhibit | **Confirmed** on hardware (stuck power button) |
 | Power-off POKE recovery | **Confirmed** on hardware |
 | DIM Error after crash / need NEW | **Confirmed** on hardware |
