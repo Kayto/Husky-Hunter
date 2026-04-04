@@ -2,6 +2,7 @@
 
 Reverse-engineered from Hunter-native tokenized `.HBA` binaries.
 Hardware: Husky Hunter, DEMOS 2.2, V09F ROM.
+Work in Progress - all items sunject to change!
 
 ---
 
