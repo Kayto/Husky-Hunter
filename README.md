@@ -2,6 +2,10 @@
 
 Programs and tools for the **Husky Hunter** portable computer (NSC800-4 @ 4MHz, DEMOS 2.2 / CP/M 2.2, 240×64 LCD).
 
+**IMPORTANT NOTE** 
+- The `.hba` files within the current repo are ASCII encoded BASIC files. As such they are not true tokenised `.hba` binaries.
+The load method needs to consider this - currently I send the ASCII via the terminal within the `BAS` interpreter and save the file. Saving the file creates the native `.hba` file. Without doing this then some corruption can occur if the file is transfered into DEMOS v2.2 via serial and executed directly from there. I am seperately working on a Hunter BASIC tokeniser, this will then allow creation of compliant `.hba` files which can be transfered withiut corruption.
+
 ![Terrain profile on Husky Hunter](Progs/images/20260320_234803.jpg)
 ![Image on Husky Hunter](Progs/images/20260321_120202~2.jpg)
 ![Husky Hunter projects collage](Progs/images/collage.jpg)
