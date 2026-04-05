@@ -14,7 +14,19 @@ No external maps needed in the field — the Hunter is a self-contained terrain 
 
 ## Status
 
-**V1.0 — Working on real Husky Hunter hardware.** Terrain profile plotting, LOS overlay, and dB path loss display confirmed. The included `CONTOUR.DAT` is a development/limited-area file (single 10×10 km tile). Area coverage and dataset size are in development.
+**V1.1 — Working on real Husky Hunter hardware.**
+
+### V1.1 Changes
+
+| # | Type | Change |
+|---|------|--------|
+| 1 | Bug | Duplicate line 9420 — RX endpoint `D(NP)=BD/10` was silently dropped (BASIC uses the last definition when a line number appears twice), causing the profile to be missing the RX end-point. Fixed by renumbering to 9419. |
+| 2 | Usability | `KEY OFF` added at startup; `CUROFF` before `SCREEN 1`; `KEY ON:CURON` on return to text and at exit. Removes the function-key overlay from the graphics screen. |
+| 3 | Usability | `PLEASE WAIT...` message moved to before profile extraction (`GOSUB 9300`), so it appears immediately after the last input rather than after the slow file-read. Time-estimate lines removed (inaccurate on real hardware). |
+| 4 | Cosmetic | Empty/reserved `REM` separator lines and dead code blocks removed (lines 199, 499, 599, 699–775, 799, 885, 999–1119, 1299–1845, 1899, 8999, 9099, 9299, 9470). |
+| 5 | Cosmetic | Input prompts and screen output indented for readability on the narrow LCD. |
+
+### Feature Status
 
 | Feature | Status |
 | ------- | ------ |
@@ -105,14 +117,13 @@ Mast Height - RX:     ? 10
 Polar'n 0=Hz 1=Vt:   ? 1
 Freq (30-5000MHz):    ? 150
 
-PROFILE WILL TAKE 8s - PLEASE WAIT.
+  PLEASE WAIT...
 ```
 
 After the last input, the program:
 
-1. Extracts the terrain profile from contour data
-2. Estimates processing time
-3. Plots the full-screen profile with LOS and dB overlay
+1. Prints `PLEASE WAIT...` and extracts the terrain profile from contour data
+2. Plots the full-screen profile with LOS and dB overlay
 
 ### Profile Plot
 
@@ -250,7 +261,7 @@ No build required. `TERRAIN.HBA` is a Hunter BASIC source file:
 
 | File | Purpose |
 | ---- | ------- |
-| `TERRAIN.HBA` | Hunter BASIC source — terrain profiler V1.0 |
+| `TERRAIN.HBA` | Hunter BASIC source — terrain profiler V1.1 |
 | `asc2contour.py` | Python — converts OS Terrain 50 .asc grids to CONTOUR.DAT |
 | `CONTOUR.DAT` | Contour dataset — TQ00 (North Downs, 10x10 km), development/limited area, production settings `-i 10 -s 200 -m 10` |
 | `README.md` | This file |

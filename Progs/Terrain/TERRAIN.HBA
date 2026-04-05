@@ -1,7 +1,7 @@
 100 REM ================================
-101 REM  TERRAIN PROFILE PLOTTER V1.0
+101 REM  TERRAIN PROFILE PLOTTER V1.1
 102 REM  Husky Hunter - 240x64 pixel LCD
-103 REM  Hunter BASIC by Kayto 20/03/2026
+103 REM  Hunter BASIC by Kayto 05/04/2026
 104 REM ================================
 105 REM
 106 REM Graphics: SCREEN 1 = 240x64 pixels
@@ -23,51 +23,48 @@
 134 REM TG/RG=TX/RX ground ht(m)
 136 L0=LOG(10)
 138 REM PI is built-in. Curv negl <=32km
-140 POKE 63416,1:POKE 63419,1
+140 POKE 63416,1:POKE 63419,1:KEY OFF
 142 REM Inhibit power-off (F7B8H/F7BBH)
 144 GOTO 200
-199 REM
 200 REM ======= OPENING MENU =======
 205 SCREEN 0
 207 PRINT CHR$(1);
+208 PRINT
 210 PRINT "  TERRAIN PROFILER V1.0"
-212 PRINT
-214 PRINT "Area: ";AF$;
+214 PRINT "  Area: ";AF$;
 216 IF AL=1 THEN PRINT "  Loaded" ELSE PRINT
-218 PRINT
-220 PRINT "1. Load Area"
-222 PRINT "2. Link Analysis"
-224 PRINT "3. Exit"
-226 PRINT
-300 INPUT "? ";CH
+220 PRINT "  1. Load Area"
+222 PRINT "  2. Link Analysis"
+224 PRINT "  3. Exit"
+300 INPUT "  ? ";CH
 305 IF CH<1 OR CH>3 THEN 300
 310 ON CH GOTO 500,600,1900
 315 GOTO 200
-499 REM
 500 REM ======= LOAD AREA FILE =======
 505 PRINT CHR$(1);
-510 PRINT "Current: ";AF$
-515 INPUT "Area file (ENTER=keep): ";F$
+506 PRINT
+510 PRINT "  Current: ";AF$
+515 INPUT "  Area file (ENTER=keep): ";F$
 520 IF F$<>"" THEN AF$=F$
 525 OPEN AF$ FOR INPUT AS #1
 530 INPUT#1,A$,AE,AN,AW,AH
 535 CLOSE#1
 540 AL=1:NP=0:BD=0
-545 PRINT "Area loaded."
-550 PRINT "Origin: ";AE;",";AN;" (hm)"
-555 PRINT "Size:   ";AW/10;"x";AH/10;" km"
+545 PRINT "  Area loaded."
+550 PRINT "  Origin: ";AE;",";AN;" (hm)"
+555 PRINT "  Size:   ";AW/10;"x";AH/10;" km"
 560 GOSUB 9500:GOTO 200
-599 REM
 600 REM ======= LINK ANALYSIS =======
-602 IF AL=0 THEN PRINT "Load area first":GOSUB 9500:GOTO 200
+602 IF AL=0 THEN PRINT "  Load area first":GOSUB 9500:GOTO 200
 605 PRINT CHR$(1);
-610 INPUT "Start Coords:         ";TE,TN
-614 INPUT "End Coords:           ";XE,XN
-618 INPUT "Mast Height - TX:     ";TH
-620 INPUT "Mast Height - RX:     ";RH
-622 INPUT "Polar'n 0=Hz 1=Vt:   ";PL
+607 PRINT
+610 INPUT "  Start Coords:         ";TE,TN
+614 INPUT "  End Coords:           ";XE,XN
+618 INPUT "  Mast Height - TX:     ";TH
+620 INPUT "  Mast Height - RX:     ";RH
+622 INPUT "  Polar'n 0=Hz 1=Vt:    ";PL
 624 IF PL<>0 AND PL<>1 THEN PL=1
-626 INPUT "Freq (30-5000MHz):    ";FR
+626 INPUT "  Freq (30-5000MHz):    ";FR
 628 IF FR<30 OR FR>5000 THEN FR=150
 630 REM Convert to area-relative offset
 632 BE=TE-AE:BN=TN-AN
@@ -78,21 +75,11 @@
 642 IF RN<0 OR RN>AH THEN PRINT "End outside area":GOSUB 9500:GOTO 200
 644 IF BE=RE AND BN=RN THEN PRINT "Same location":GOSUB 9500:GOTO 200
 650 REM --- Extract profile ---
-652 GOSUB 9300
-654 REM --- Estimate time ---
-656 ET=INT(NP*0.3+2)
-658 EM=INT(ET/60):ES=ET-EM*60
-660 PRINT
-662 PRINT "PROFILE WILL TAKE ";
-664 IF EM>0 THEN PRINT EM;"m ";
-666 PRINT ES;"s - PLEASE WAIT."
+652 PRINT "  PLEASE WAIT...(IGNORE ? Redo Errors)"
+654 GOSUB 9300
 670 REM --- Scale and plot ---
 672 IF NP<2 THEN PRINT "No crossings found":GOSUB 9500:GOTO 200
 674 GOTO 800
-699 REM
-700 REM (reserved)
-775 GOTO 200
-799 REM
 800 REM ======= PLOT PROFILE =======
 805 IF NP<2 THEN PRINT "Need 2+ points":GOSUB 9500:GOTO 200
 816 HN=H(1):HX=H(1)
@@ -109,8 +96,7 @@
 870 REM Scale: full 240x64 LCD
 875 TD=D(NP)-D(1):HR=HX-HN
 880 XS=239/TD:YS=63/HR
-885 REM
-890 SCREEN 1
+890 CUROFF:SCREEN 1
 895 REM --- Plot terrain profile ---
 910 FOR I=1 TO NP
 915 X2=INT((D(I)-D(1))*XS)
@@ -128,12 +114,8 @@
 968 GOSUB 9100
 970 REM --- Wait for keypress ---
 975 A$=INKEY$:IF A$="" THEN 975
-985 SCREEN 0
+985 SCREEN 0:KEY ON:CURON
 990 GOTO 200
-999 REM
-1000 REM (reserved)
-1110 RETURN
-1119 REM
 1120 REM === LOS LINE (dashed) ===
 1125 REM TX antenna top position
 1130 L1=H(1)+TH
@@ -160,22 +142,11 @@
 1235 IF AY>63 THEN AY=63
 1240 IF LB<AY THEN FOR J=LB TO AY:PSET(239,J):NEXT J
 1245 RETURN
-1299 REM
-1300 REM (reserved)
-1595 GOTO 200
-1699 REM
-1700 REM (reserved)
-1760 GOTO 200
-1799 REM
-1800 REM (reserved)
-1845 GOTO 200
-1899 REM
 1900 REM ======= EXIT =======
 1905 POKE 63416,0:POKE 63419,0
-1910 SCREEN 0:PRINT CHR$(1);
+1910 SCREEN 0:PRINT CHR$(1);:KEY ON:CURON
 1915 PRINT "Goodbye."
 1920 END
-8999 REM
 9000 REM === DRAW LINE (Bresenham) ===
 9001 REM Input: X1,Y1 to X2,Y2
 9002 REM Sets pixels using POINT x,y
@@ -194,7 +165,6 @@
 9055 REM Shallow line (DX >= DY)
 9060 ER=ER-DY:IF ER<0 THEN ER=ER+DX:Y1=Y1+SY
 9065 X1=X1+SX:GOTO 9025
-9099 REM
 9100 REM === CALC dB & OVERLAY ON PROFILE ===
 9105 REM FSPL
 9110 FS=32.44+20*LOG(TD)/L0+20*LOG(FR)/L0
@@ -225,7 +195,6 @@
 9195 REM Draw box and dB text mid-screen
 9200 LOCATE 4,16:PRINT TL;
 9205 RETURN
-9299 REM
 9300 REM === EXTRACT PROFILE FROM CONTOURS ===
 9301 REM Finds contour crossings along bearing
 9302 REM Input: BE,BN,RE,RN (offset hm)
@@ -277,7 +246,7 @@
 9414 NEXT I
 9416 REM Add TX and RX endpoints
 9418 NP=NP+1:D(NP)=0:H(NP)=TG
-9420 NP=NP+1:D(NP)=BD/10:H(NP)=RG
+9419 NP=NP+1:D(NP)=BD/10:H(NP)=RG
 9420 REM --- Insertion sort by chainage ---
 9425 FOR I=2 TO NP
 9430 KD=D(I):KH=H(I):J=I-1
@@ -287,7 +256,6 @@
 9450 D(J+1)=KD:H(J+1)=KH
 9455 NEXT I
 9460 RETURN
-9470 REM
 9500 REM === WAIT FOR KEYPRESS ===
 9505 PRINT
 9510 INPUT "ENTER to continue...";A$
