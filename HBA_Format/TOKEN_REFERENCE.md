@@ -206,18 +206,6 @@ The following are stored as literal bytes and never tokenized:
 
 ---
 
-## INCHR Syntax
-
-```
-INCHR varname
-INCHR "prompt"; varname
-```
-
-`varname` must be a **numeric** variable.  INCHR waits for a keypress and stores
-the decimal ASCII value.  Using a string variable causes a `*STX Error`.
-
----
-
 ## Complete Official Keyword Index
 
 All keywords listed in the Hunter BASIC manual index (V09F ROM, section 5).
