@@ -1,7 +1,9 @@
 # Husky Hunter BASIC — Token Reference
 
 Reverse-engineered from Hunter-native tokenized `.HBA` binaries.
-Hardware: Husky Hunter, DEMOS 2.2, V09F ROM.
+Hardware: Husky Hunter, DEMOS 2.2, V 9G06h ROM.
+
+Work in Progress - all items subject to change!
 
 ---
 
