@@ -42,22 +42,46 @@ must be `LOAD`ed before they can run.
 | `END` | `8D` |
 | `RESTORE` | `8E` |
 | `REM` | `8F` — comment text stored verbatim (including leading space) |
+| `LET` | `80` |
+| `LPRINT` | `89` — output to RS-232 |
+| `CLEAR` | `90` — clears all variables |
+| `PUSH` | `91` |
 | `POKE` | `92` |
 | `LOCATE` | `93` |
+| `ERROR` | `94` — also sub-token in `ON ERROR` (`9F 94`) |
+| `PRINT` | `95` |
+| `INCHR` | `96` — read keypress; returns decimal ASCII value to numeric var |
+| `OPCHR` | `97` — print raw character code(s) |
+| `LINPUT` | `98` |
+| `LINCHR` | `99` — read char from RS-232 |
+| `LOPCHR` | `9A` — send char to RS-232 |
+| `HELP` | `9B` |
+| `POWER` | `9C` — `POWER n` (timeout interval); sub-tokens: OFF=`D9`, CONT=`A8` |
+| `WINCHR` | `9D` — read char from optical wand |
+| `BEEP` | `9E` |
 | `ON` | `9F` |
 | `ON ERROR` | `9F 94` |
-| `PRINT` | `95` |
-| `OPCHR` | `97` — print raw character code(s) |
-| `INCHR` | `96` — read keypress; returns decimal ASCII value to numeric var |
-| `LINPUT` | `98` |
-| `BEEP` | `9E` |
+| `SPC` | `A1` — used in `PRINT SPC(n)` |
+| `TAB` | `A2` — used in `PRINT TAB(n)` |
+| `LLIST` | `A7` — list program to RS-232 |
+| `CONT` | `A8` — continue execution |
 | `SYSTEM` | `AA` |
 | `NEW` | `AB` * |
-| `RUN` | `AC` * |
+| `LLOAD` | `AC` — load program from RS-232 |
 | `LIST` | `AD` * |
-| `LOAD` | `AE` * |
+| `CRT` | `AE` — switch console to RS-232 |
 
 \* Not yet confirmed against hardware binary; value inferred from sequence.
+
+### Multi-word statement sequences
+
+| Source text | Hex | Notes |
+|-------------|-----|-------|
+| `POWER OFF` | `9C D9` | |
+| `POWER CONT` | `9C A8` | disable power-off |
+| `INPUT USING` | `8A D6` | `USING` sub-token = `D6` |
+| `ON BREAK GOSUB` | `9F D8 84` | `BREAK` sub-token = `D8` |
+| `ON COMMS GOSUB` | `9F DB 84` | `COMMS` sub-token = `DB` |
 
 ---
 
@@ -81,6 +105,23 @@ must be `LOAD`ed before they can run.
 | `KEY ON` | `FE 91 9F` |
 | `OPEN` | `FE 95` |
 | `CLOSE` | `FE 9A` |
+| `SWAP` | `FE 8A` |
+| `STOP` | `FE 8C` |
+| `TRON` | `FE 93` |
+| `TROFF` | `FE 94` |
+| `INKEY` | `FE 9E` — statement-style: `INKEY var` (non-blocking) |
+| `KILL` | `FE 82` — delete file |
+| `DEFSEG` | `FE 98` — define RAM page |
+| `MAXFILES` | `FE 9D` |
+| `OUT` | `FE 99` — output to port |
+| `LTRON` | `FE 96` — trace to RS-232 |
+| `FILES` | `FE 97` — list files |
+| `WAND` | `FE A0` — optical wand decode |
+| `WINPUT` | `FE 9C` — input string from wand |
+| `COM` | `FE 8B` — communications; also sub-token in `ON COM(n)` |
+| `NAME` | `FE 9F` — rename file (`NAME "old" AS "new"`) |
+| `AS` | `FE A1` — sub-token in `FOR … AS` (OPEN) and `NAME … AS` |
+| `KEY` | `FE 91` — bare KEY for `KEY(n)` context; `KEY OFF`=`FE 91 D9`, `KEY ON`=`FE 91 9F` |
 
 ### OPEN file-mode sequences (follow the filename string)
 
@@ -109,10 +150,26 @@ Open paren `(` tokenizes separately as `E0`, so e.g. `INT(X)` → `B6 E0 58 29`.
 | `ATN` | `C4` | |
 | `LEN` | `D1` | |
 | `VAL` | `D3` | |
+| `EXP` | `DD` | |
+| `RND` | `BE` | dummy arg required: `RND(0)` |
+| `TAN` | `C7` | |
+| `POS` | `B1` | |
+| `VARPTR` | `C1` | |
+| `TAB` | `A2` | used as `PRINT TAB(n)`, paren tokenizes as `E0` |
+| `SPC` | `A1` | used as `PRINT SPC(n)`, paren tokenizes as `E0` |
 | `COS` | `FE C8` | |
+| `FIX` | `FE B6` | truncate toward zero (cf. INT which floors) |
+| `INSTR` | `FE B0` | |
 | `PEEK` | `FE CA` | |
 | `ABS` | `FE CC` | |
 | `FRE` | `FE CD` | |
+| `SRCH` | `C0` | syntax: `SRCH(array_element, count)` |
+| `LOC` | `B8` | |
+| `INP` | `FE CB` | read from port |
+| `POINT` | `FE D6` | returns pixel state |
+| `ERR` | `FE B1` | error code after `ON ERROR` handler |
+| `ERL` | `FE B2` | line number of last error |
+| `POP` | `FE C9` | return value from machine-code stack |
 
 ### String functions — `$(` absorbed into token (no `E0` follows)
 
@@ -125,6 +182,9 @@ e.g. `CHR$(65)` → `D4 36 35 29`
 | `MID$(` | `D0` |
 | `LEFT$(` | `CE` |
 | `RIGHT$(` | `CF` |
+| `SPACE$(` | `CB` |
+| `STRING$(` | `CC` |
+| `JSR$(` | `DA` — fixed-field string from machine-code |
 
 ---
 
@@ -203,6 +263,18 @@ The following are stored as literal bytes and never tokenized:
 | `0–9` | `30–39` — numeric literals stored as ASCII digits |
 | `A–Z` | `41–5A` — variable names stored as ASCII |
 | `$` | `24` — string variable suffix |
+
+---
+
+## INCHR Syntax
+
+```
+INCHR varname
+INCHR "prompt"; varname
+```
+
+`varname` must be a **numeric** variable.  INCHR waits for a keypress and stores
+the decimal ASCII value.  Using a string variable causes a `*STX Error`.
 
 ---
 
