@@ -14,8 +14,8 @@ Progs/Terrain/OS_Terrain/
 # ASM subdirectories
 Progs/ASM/
 
-# HBA subdirectory
-Progs/HBA/
+# HBA subdirectory (exclude DEMO1.HBA)
+Progs/HBA/DEMO1.HBA
 
 # Binary format (development, private)
 Progs/Terrain/TERRBIN.HBA

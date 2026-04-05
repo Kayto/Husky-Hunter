@@ -1,0 +1,18 @@
+1 REM COLLATZ.HBA
+2 REM Collatz conjecture sequence
+3 REM By kayto 21/03/2026
+10 PRINT "Collatz Conjecture"
+20 PRINT "Enter a number (0 to quit)"
+30 INPUT "N=";N
+40 IF N=0 THEN END
+50 IF N<1 THEN 30
+60 S=0
+70 PRINT N;
+80 IF N=1 THEN 120
+90 IF N/2=INT(N/2) THEN N=N/2:GOTO 110
+100 N=3*N+1
+110 S=S+1:GOTO 70
+120 PRINT
+130 PRINT "Steps:";S
+140 PRINT
+150 GOTO 20

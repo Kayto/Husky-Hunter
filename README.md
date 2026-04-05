@@ -17,12 +17,14 @@ Programs and tools for the **Husky Hunter** portable computer (NSC800-4 @ 4MHz, 
 | [news\_feed](Progs/news_feed/) | BBC News headline ticker — PC fetches RSS, formats and sends headlines over RS-232 for LCD display | Working on hardware |
 | [performance\_log](Progs/performance_log/) | Real-time PC performance logger — streams CPU and memory usage over RS-232 to the Hunter's LCD | Working on hardware |
 | [log\_file](Progs/log_file/) | Performance file logger — logs CPU and memory samples to PERFLOG.DAT on the Hunter with menu-driven readback | Working on hardware |
+| [HBA](Progs/HBA/) | Short stand-alone Hunter BASIC programs — charset printer, Collatz sequence, Hello World graphic, and system diagnostic | Working on hardware |
 | [Morse](Progs/Morse/) | Morse code tape — type a message and watch it scroll across the LCD with audio output, ITU standard timing | Working on hardware |
 | [Y2K](Y2K/) | Y2K date fix — patches the ROM's hardcoded `19xx` century to `20xx` via a 12-byte COM utility or BASIC one-liner | Working on hardware |
 
 ## Reference
 
 * [HUNTER\_BASIC\_GOTCHAS.md](HUNTER_BASIC_GOTCHAS.md) — Hunter BASIC syntax differences, reserved words, and quirks discovered during hardware testing
+* [HBA\_Format/TOKEN\_REFERENCE.md](HBA_Format/TOKEN_REFERENCE.md) — Reverse-engineered Hunter BASIC tokenized `.HBA` file format: magic byte, line record structure, statement and keyword tokens
 
 ## The Husky Hunter
 
