@@ -179,7 +179,7 @@ The area file holds digitised contour polylines from 1:50,000 maps. First line d
 | RAM-disk (bank-switched) | 144K |
 | File system overhead | ~6K |
 | **STAT reports available** | **~138K** |
-| TERRAIN.HBA program | ~9K |
+| TERRAIN.BAS program | ~9K |
 | **Available for contour data** | **~129K** |
 
 Benchmarked with real OS Terrain 50 data, delta-encoded, `-s 200 -m 10`:
@@ -205,7 +205,7 @@ Computed automatically after profile extraction and overlaid on the plot:
 * **Knife-edge diffraction** (ITU single-obstruction model) when terrain blocks LOS
 * **Total** displayed as integer dB on the profile screen
 
-## Program Structure (TERRAIN.HBA)
+## Program Structure (TERRAIN.BAS)
 
 | Lines | Section |
 | ----- | ------- |
@@ -251,7 +251,7 @@ Set to 1 at startup (line 140), cleared to 0 on exit (line 1905).
 
 ## Build
 
-No build required. `TERRAIN.HBA` is a Hunter BASIC source file:
+No build required. `TERRAIN.BAS` is a Hunter BASIC source file:
 
 1. Transfer to Hunter via serial (`INP` at 4800 baud) or type directly
 2. `LOAD "TERRAIN"`
@@ -261,7 +261,7 @@ No build required. `TERRAIN.HBA` is a Hunter BASIC source file:
 
 | File | Purpose |
 | ---- | ------- |
-| `TERRAIN.HBA` | Hunter BASIC source — terrain profiler V1.1 |
+| `TERRAIN.BAS` | Hunter BASIC source — terrain profiler V1.1 |
 | `asc2contour.py` | Python — converts OS Terrain 50 .asc grids to CONTOUR.DAT |
 | `CONTOUR.DAT` | Contour dataset — TQ00 (North Downs, 10x10 km), development/limited area, production settings `-i 10 -s 200 -m 10` |
 | `README.md` | This file |
@@ -307,6 +307,6 @@ See [HUNTER_BASIC_GOTCHAS.md](../../HUNTER_BASIC_GOTCHAS.md) for all Hunter BASI
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) for details.
+MIT License. See [LICENSE](../../LICENSE) for details.
 
 OS Terrain 50 data is provided under the Open Government Licence v3.0.

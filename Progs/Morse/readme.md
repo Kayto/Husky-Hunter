@@ -32,7 +32,7 @@ Dot = `*`, Dash = `---`, Baseline = `.` (gaps between elements/characters/words)
 
 | File | Description |
 |------|-------------|
-| `MORSE.HBA` | Hunter BASIC Morse code tape program |
+| `MORSE.BAS` | Hunter BASIC Morse code tape program |
 
 ## Usage
 

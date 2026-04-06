@@ -5,8 +5,9 @@
 __pycache__/
 
 # Original documentation and ROM dumps
-Progs/Terrain/Orig_Docs/
-Progs/Terrain/Orig_ROMS/
+Docs/Orig_Docs/
+Docs/Orig_ROMS/
+Docs/hunter_manual_text.txt
 
 # OS Terrain source data
 Progs/Terrain/OS_Terrain/
@@ -14,8 +15,12 @@ Progs/Terrain/OS_Terrain/
 # ASM subdirectories
 Progs/ASM/
 
-# HBA subdirectory (exclude DEMO1.BAS)
-Progs/HBA/DEMO1.BAS
+# HBA Format dev subfolder (test fixtures, dev tools) and HSYNC reference binaries
+HBA_Format/Dev/
+HBA_Format/HSYNC/
+
+# BASIC subfolder (exclude DEMO1.BAS)
+Progs/BASIC/DEMO1.BAS
 
 # Binary format (development, private)
 Progs/Terrain/TERRBIN.BAS
@@ -28,7 +33,7 @@ Progs/Terrain/Test/TERRBIN.BAS
 Progs/Terrain/DIAGFILE.BAS
 
 # ROM analysis (private)
-Progs/Terrain/Orig_ROMS/ROM_ANALYSIS.md
+Docs/Orig_ROMS/ROM_ANALYSIS.md
 
 # HCOM distribution files (downloaded separately)
 HuskyHCOM/hcomw/*
@@ -54,3 +59,7 @@ Screenshot*.png
 
 # Archives
 *.7z
+
+# PyInstaller build artefacts
+build/
+dist/

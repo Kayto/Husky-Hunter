@@ -4,20 +4,20 @@ A fully self-contained Hunter BASIC program that predicts tides on-device. No PC
 
 ## Status
 
-**V1.3 — 28 Mar 2026.** Hardware verified. Portsmouth constants calibrated against UKHO-derived reference data for improved accuracy. Precision-safe astronomical arguments. Can't guarantee any unchecked wider dates work and the accuracy of all...which reminds me....
+**V1.3 — 28 Mar 2026.** Hardware verified — matches Python simulation exactly on real Hunter. Portsmouth constants calibrated against UKHO-derived reference data for improved accuracy. Precision-safe astronomical arguments.
 
 **Disclaimer:** This program is conceptual for educational and hobbyist use only. Predictions are approximate and unverified and must not be relied upon for navigation, safety, or any activity where life or property may be at risk. Always consult official tide tables and local harbour authorities for real-world decisions. The authors accept no liability for any loss or damage arising from the use of this software.
 
 ## Overview
 
-TIDE2.HBA performs all tidal prediction mathematics natively on the Hunter. This makes it a true field tool — load once, predict any date.
+TIDE2.BAS performs all tidal prediction mathematics natively on the Hunter. This makes it a true field tool — load once, predict any date.
 
 ### How It Works
 
 ```
 ON THE HUNTER:
 
-1. RUN TIDE2.HBA
+1. RUN TIDE2.BAS
         ↓
 2. Select port (1-6)
    Enter date (DD/MM/YYYY)
@@ -84,7 +84,7 @@ Portsmouth constants were calibrated against UKHO-derived reference data for imp
 
 On the Husky Hunter:
 
-1. Transfer TIDE2.HBA to the Hunter via RS-232
+1. Transfer TIDE2.BAS to the Hunter via RS-232
 2. Enter `BAS`
 3. `LOAD "TIDE2"`
 4. `RUN`
@@ -118,7 +118,7 @@ Lines 5200-5202 DATA: cumulative days to month start (Jan-Dec)
 
 ## Technical Notes
 
-* **Computation time**: 240 × 7 = 1,680 COS evaluations in interpreted BASIC on a 4 MHz CMOS CPU. Takes approximately 5 minutes on real hardware.
+* **Computation time**: 240 × 7 = 1,680 COS evaluations in interpreted BASIC on a 4 MHz CMOS CPU. Takes approximately 2–3 minutes on real hardware.
 * **Memory**: DIM H(240) + 7-element constituent arrays + 8-element event arrays. Well within Hunter RAM.
 * **PI**: Used as a built-in constant (Hunter BASIC reserves `PI`).
 * **LOCATE**: Uses pixel coordinates (x, y) in SCREEN 1 / CHAR 0 mode, not character row/col.
@@ -153,4 +153,4 @@ Portsmouth is one of the most harmonically complex ports in the UK (famous for i
 
 ## License
 
-MIT License.
+MIT License. See [LICENSE](../../LICENSE) for details.

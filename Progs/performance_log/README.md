@@ -13,7 +13,7 @@ Real-time PC CPU and memory usage display on the Hunter's 240×64 LCD, fed over 
 ```
 PC (running):                          Hunter (displaying):
 
-feed.py                                RUN LOG.HBA
+feed.py                                RUN LOG.BAS
   reads CPU% + MEM%                          ↓
   every ~1 second                      Waits for serial data
         ↓                                    ↓
@@ -60,7 +60,7 @@ Hunter reads each value with `LINPUT "",var` (dedicated RS-232 input, suppressed
 |------|-------------|
 | `feed.py` | PC-side Python script — reads CPU/MEM, sends over serial |
 | `feed.bat` | Windows batch launcher for feed.py (double-click to start) |
-| `LOG.HBA` | Hunter BASIC display program |
+| `LOG.BAS` | Hunter BASIC display program |
 
 ## Usage
 
@@ -106,4 +106,4 @@ Ruggedised portable field computer (1983). NSC800-4 @ 4 MHz, 240×64 dot LCD, RS
 
 ## License
 
-MIT License.
+MIT License. See [LICENSE](../../LICENSE) for details.

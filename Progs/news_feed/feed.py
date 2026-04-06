@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """feed.py — BBC News RSS feed for the Husky Hunter.
+By Kayto, 2026
+Licensed under the MIT License. See LICENSE file for details.
 
 Fetches BBC News headlines, formats to 40 columns, sends over RS-232.
 """

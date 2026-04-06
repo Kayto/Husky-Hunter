@@ -114,16 +114,16 @@ Use `WRITE#` to create data files — it automatically quotes strings.
 
 ### BAS LOAD and programs
 
-`.HBA` files are plain ASCII text (numbered BASIC lines). They are
+`.BAS` files are plain ASCII text (numbered BASIC lines). They are
 transferred to the Hunter via HCOM as-is and display correctly when
-checked with CP/M `TYPE`. However, `LOAD` inside BAS has been observed to corrupt programs — line 10 of HIMAGE.HBA was garbled after `LOAD`
+checked with CP/M `TYPE`. However, `LOAD` inside BAS has been observed to corrupt programs — line 10 of HIMAGE.BAS was garbled after `LOAD`
 despite the file being intact on disk.
 
 **Possible cause:**
 Hunter BASIC `LOAD` may expect a tokenised or
-intermediate format rather than raw ASCII. All `.HBA` files in this
+intermediate format rather than raw ASCII. All `.BAS` files in this
 project are plain ASCII text (numbered BASIC lines, CR+LF terminated).
-The `.HBA` i use may not be in the correct format the Hunter natively recognises. `LOAD` may partially
+The tokenized `.HBA` format is the correct format the Hunter natively recognises. `LOAD` may partially
 work with ASCII files but misparse certain lines.
 
 `,A` flag is **not** supported (`LOAD "file",A` gives `*STX Error`).
@@ -134,8 +134,8 @@ line is entered directly by the interpreter — this bypasses `LOAD`
 entirely and avoids any format mismatch.
 
 **For investigation:**
-Analyse a Hunter side saved `.hba` versus my ASCII
-based `.hba`. This should help identify the differences for consideration.
+Analyse a Hunter side saved `.HBA` versus my ASCII
+based `.BAS`. This should help identify the differences for consideration.
 
 - - -
 
@@ -296,7 +296,7 @@ of the screen. Not critical but confusing.
 
 ### BREAK exits dirty
 
-Programs that loop forever (e.g. NEWS.HBA, LOG.HBA) rely on BREAK to exit. BREAK does **not** run any cleanup code — it drops straight to the BASIC prompt with whatever display state was active. After pressing BREAK, if you have problems, manually type:
+Programs that loop forever (e.g. NEWS.BAS, LOG.BAS) rely on BREAK to exit. BREAK does **not** run any cleanup code — it drops straight to the BASIC prompt with whatever display state was active. After pressing BREAK, if you have problems, manually type:
 
 ```
 SCREEN 0:PRINT CHR$(1);:KEY ON:CURON
@@ -305,7 +305,7 @@ SCREEN 0:PRINT CHR$(1);:KEY ON:CURON
 ### RUN resets file handles
 
 Looks like `RUN` closes all open file channels automatically. If a program has a file open (e.g. `OPEN "DATA" FOR OUTPUT AS #1`) and you press BREAK, typing `RUN` to restart will cleanly reset the file state — no `*FOP
-Error`. Discovered with LOGF.HBA: BREAK during logging, then `RUN`
+Error`. Discovered with LOGF.BAS: BREAK during logging, then `RUN`
 and selecting option 2 (read back) opens the file without error.
 
 This means `GOTO` or `CONT` after BREAK **would** hit `*FOP Error`
@@ -337,7 +337,7 @@ LINPUT "",A$   ' Read one line from RS-232, suppressed prompt
 
 `LINPUT ""` suppresses the `?` prompt and reads a full line (up to CR)
 from the serial port. This is the standard pattern for receiving
-PC-fed data line-by-line (used in NEWS.HBA, LOG.HBA, TIDE2.HBA).
+PC-fed data line-by-line (used in NEWS.BAS, LOG.BAS, TIDE2.BAS).
 
 * <b>Not the same as `INPUT#`</b> — `INPUT#` reads from files, `LINPUT`
 reads from the RS-232 port (or keyboard if no serial data).

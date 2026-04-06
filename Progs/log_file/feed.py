@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """feed.py — PC-side performance feed for the Husky Hunter.
+By Kayto, 2026
+Licensed under the MIT License. See LICENSE file for details.
 
 Reads CPU and memory usage, sends over RS-232 as separate lines.
 """

@@ -2,33 +2,45 @@
 
 Programs and tools for the **Husky Hunter** portable computer (NSC800-4 @ 4MHz, DEMOS 2.2 / CP/M 2.2, 240×64 LCD).
 
-**IMPORTANT NOTE** 
-- The `.hba` files within the current repo are ASCII encoded BASIC files. As such they are not true tokenised `.hba` binaries.
-The load method needs to consider this - currently I send the ASCII via the terminal within the `BAS` interpreter and save the file. Saving the file creates the native `.hba` file. Without doing this then some corruption can occur if the file is transferred into DEMOS v2.2 via serial and executed directly from there. I am separately working on a Hunter BASIC tokeniser, this will then allow creation of compliant `.hba` files which can be transferred without corruption.
+The **`HBA/`** folder contains pre-built tokenized binaries for all programs — transfer any `.HBA` file to the Hunter via HCOM and run it directly from the DEMOS prompt without any LOAD/SAVE step.
+
+To convert your own `.BAS` source files, use the tools in [`HBA_Format/`](HBA_Format/README.md).
 
 ![Terrain profile on Husky Hunter](Progs/images/20260320_234803.jpg)
 ![Image on Husky Hunter](Progs/images/20260321_120202~2.jpg)
 ![Husky Hunter projects collage](Progs/images/collage.jpg)
 
-## Projects
+## Hunter BASIC Programs
 
-| Project | Description | Status |
+Programs that run on the Hunter.  Source files are in `Progs/` and `Y2K/`;
+pre-built binaries are in [`HBA/`](HBA/).
+
+| Program | Description | Status |
 | ------- | ----------- | ------ |
 | [Terrain](Progs/Terrain/) | Point-to-point radio link profiler — automatic terrain profile extraction from contour data, LOS overlay, dB path loss | Working on hardware |
-| [image\_writer](Progs/image_writer/) | PNG/JPEG to Hunter BASIC image converter — Atkinson/Floyd-Steinberg/ordered/threshold dithering for 240×64 LCD | Working on hardware |
-| [HuskyHCOM](HuskyHCOM/) | HCOM file transfer launcher for modern 64-bit Windows — DOSBox-based with interactive setup, auto COM port detection, and dev sync workflow | Working |
 | [Tide](Progs/Tide/) | Self-contained tidal predictor — computes and plots 24-hour tide curves from 7 harmonic constituents, 6 built-in UK ports | Working on hardware |
-| [news\_feed](Progs/news_feed/) | BBC News headline ticker — PC fetches RSS, formats and sends headlines over RS-232 for LCD display | Working on hardware |
-| [performance\_log](Progs/performance_log/) | Real-time PC performance logger — streams CPU and memory usage over RS-232 to the Hunter's LCD | Working on hardware |
-| [log\_file](Progs/log_file/) | Performance file logger — logs CPU and memory samples to PERFLOG.DAT on the Hunter with menu-driven readback | Working on hardware |
-| [HBA](Progs/HBA/) | Short stand-alone Hunter BASIC programs — charset printer, Collatz sequence, Hello World graphic, and system diagnostic | Working on hardware |
 | [Morse](Progs/Morse/) | Morse code tape — type a message and watch it scroll across the LCD with audio output, ITU standard timing | Working on hardware |
+| [news\_feed](Progs/news_feed/) | BBC News headline ticker — Hunter program displays headlines sent by PC feed over RS-232 | Working on hardware |
+| [performance\_log](Progs/performance_log/) | Real-time PC performance strip-chart — Hunter program displays CPU/memory sent by PC feed over RS-232 | Working on hardware |
+| [log\_file](Progs/log_file/) | Performance file logger — logs CPU and memory samples to PERFLOG.DAT on the Hunter, with menu-driven readback | Working on hardware |
+| [image\_writer](Progs/image_writer/) | LCD image display — Hunter program shows images converted from PNG/JPEG by PC-side tool | Working on hardware |
+| [BASIC](Progs/BASIC/) | Short stand-alone programs — charset printer, Collatz sequence, Hello World graphic, system diagnostic | Working on hardware |
 | [Y2K](Y2K/) | Y2K date fix — patches the ROM's hardcoded `19xx` century to `20xx` via a 12-byte COM utility or BASIC one-liner | Working on hardware |
+
+## PC Tools
+
+Tools that run on the PC to support the Hunter programs above.
+
+| Tool | Description | Status |
+| ---- | ----------- | ------ |
+| [HBA\_Format](HBA_Format/README.md) | Tokenizer (`HBA_Tokenizer.exe`, `hba_tokenize.py`) — converts `.BAS` source to `.HBA` binary; includes file format reference and token table | Working |
+| [HuskyHCOM](HuskyHCOM/) | HCOM file transfer launcher for modern 64-bit Windows — DOSBox-based with interactive setup, auto COM port detection, and dev sync workflow | Working |
 
 ## Reference
 
 * [HUNTER\_BASIC\_GOTCHAS.md](HUNTER_BASIC_GOTCHAS.md) — Hunter BASIC syntax differences, reserved words, and quirks discovered during hardware testing
-* [HBA\_Format/TOKEN\_REFERENCE.md](HBA_Format/TOKEN_REFERENCE.md) — Reverse-engineered Hunter BASIC tokenized `.HBA` file format: magic byte, line record structure, statement and keyword tokens
+* [HBA\_Format/](HBA_Format/README.md) — Tokenizer tools (`HBA_Tokenizer.exe`, `hba_tokenize.py`), file format reference, and token table
+* [HBA\_Format/TOKEN\_REFERENCE.md](HBA_Format/TOKEN_REFERENCE.md) — Reverse-engineered Hunter BASIC token byte assignments
 
 ## The Husky Hunter
 
@@ -51,4 +63,4 @@ Micro Live S02E02: https://www.youtube.com/watch?v=y1ZBr3NInow&t=739s
 
 ## License
 
-MIT License. See [Progs/Terrain/LICENSE](Progs/Terrain/LICENSE) for details.
+MIT License. See [LICENSE](LICENSE) for details.

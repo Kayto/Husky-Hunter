@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""feed.py — PC-side strip chart feeder for the Husky Hunter.
-
+"""feed.py — PC-side strip chart feeder for the Husky Hunter.By Kayto, 2026
+Licensed under the MIT License. See LICENSE file for details.
 Reads CPU and memory usage, sends as "CPU,MEM\\r\\n" over RS-232.
 """
 

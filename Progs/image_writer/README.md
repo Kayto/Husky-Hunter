@@ -1,12 +1,12 @@
 # png2hba — Image to Husky Hunter BASIC Converter
 
-Converts PNG/JPEG images to Hunter BASIC programs (.HBA) that display on the Husky Hunter's 240×64 monochrome LCD.
+Converts PNG/JPEG images to Hunter BASIC programs (`.BAS`) that display on the Husky Hunter's 240×64 monochrome LCD.
 
 ![Atkinson dither preview](preview_atkinson.png)
 
 ## Status
 
-Working — tested on real Husky Hunter hardware. The Python converter produces valid .HBA files that load and render correctly on the 240×64 LCD. Note: BAS `LOAD` may corrupt line 10 (see [Generated HBA](#generated-hba)).
+Working — tested on real Husky Hunter hardware. The Python converter produces valid `.BAS` source files that tokenize and render correctly on the 240×64 LCD. Note: BAS `LOAD` may corrupt line 10 (see [Generated HBA](#generated-hba)).
 
 ## Usage
 
@@ -18,26 +18,26 @@ python png2hba.py <input_image> [options]
 
 ```bash
 # Default: Atkinson dither, crop to fill LCD
-python png2hba.py Source_Images/product-137443.png -o HUSKY.HBA
+python png2hba.py Source_Images/product-137443.png -o HUSKY.BAS
 
 # With LCD-style preview image
-python png2hba.py photo.png -o PHOTO.HBA --preview preview.png
+python png2hba.py photo.png -o PHOTO.BAS --preview preview.png
 
 # Threshold dither for logos/line art
-python png2hba.py logo.png -o LOGO.HBA -d threshold -t 200
+python png2hba.py logo.png -o LOGO.BAS -d threshold -t 200
 
 # Adjust brightness and contrast
-python png2hba.py dark_photo.jpg -o OUTPUT.HBA -b 1.5 -c 1.3
+python png2hba.py dark_photo.jpg -o OUTPUT.BAS -b 1.5 -c 1.3
 
 # Invert (swap black/white)
-python png2hba.py photo.png -o INVERT.HBA -i
+python png2hba.py photo.png -o INVERT.BAS -i
 ```
 
 ### Options
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `-o` | `IMAGE.HBA` | Output .HBA filename |
+| `-o` | `IMAGE.BAS` | Output .BAS filename |
 | `-d` | `floyd-steinberg` | Dithering: `atkinson`, `floyd-steinberg`, `ordered`, `threshold` |
 | `-t` | `128` | Threshold value 0–255 (threshold mode only) |
 | `-f` | `fill` | Resize: `fill` (crop), `fit` (letterbox), `stretch` |
@@ -116,8 +116,8 @@ Zero bytes and 0xFF bytes are short-circuited for speed on the 4 MHz Z80.
 |------|-------------|
 | `png2hba.py` | Converter script |
 | `Source_Images/` | Input images |
-| `HIMAGE.HBA` | Husky Hunter image program — ASCII source (tokenize before transfer) |
-| `HIMAGE2.HBA` | Husky dog image program — ASCII source (tokenize before transfer) |
+| `HIMAGE.BAS` | Husky Hunter image program — ASCII source (tokenize before transfer) |
+| `HIMAGE2.BAS` | Husky dog image program — ASCII source (tokenize before transfer) |
 | `preview_atkinson.png` | LCD-style preview of HIMAGE.HBA output |
 | `HUSKY_preview.png` | LCD-style preview of HIMAGE2.HBA output |
 

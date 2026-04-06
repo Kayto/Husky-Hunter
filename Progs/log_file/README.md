@@ -15,7 +15,7 @@ Based on the [performance_log](../performance_log/) project, this adds file logg
 ```
 PC (running):                          Hunter (displaying):
 
-feed.py                                RUN LOGF.HBA
+feed.py                                RUN LOGF.BAS
   reads CPU% + MEM%                          ↓
   every ~1 second                      Menu: 1) Log  2) Read
         ↓                                    ↓
@@ -87,7 +87,7 @@ MEM\r\n
 |------|-------------|
 | `feed.py` | PC-side Python script — reads CPU/MEM, sends over serial |
 | `feed.bat` | Windows batch launcher (double-click to start) |
-| `LOGF.HBA` | Hunter BASIC logger with file write + readback |
+| `LOGF.BAS` | Hunter BASIC logger with file write + readback |
 
 ## Usage
 

@@ -2,8 +2,6 @@
 
 Displays BBC News headlines on the Hunter's 240×64 LCD, fed from PC over RS-232.
 
-<video src="../images/newsfeed.mp4" controls width="480"></video>
-
 ## Status
 
 **v1.0 — Working.** In development to tighten line feed parsing and screen refresh optimisations.
@@ -106,6 +104,10 @@ pip install pyserial
 ```
 
 RSS parsing uses Python stdlib only (`urllib` + `xml.etree`).
+
+## Demo
+
+[newsfeed.mp4](../images/newsfeed.mp4)
 
 ## The Husky Hunter
 

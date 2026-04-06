@@ -68,8 +68,8 @@ Assemble this as `Y.COM`. After power on, just type `Y` then Enter — correct d
 |------|-------------|
 | `Y.COM` | Ready-to-run 12-byte DEMOS binary — copy to Hunter and type `Y` after power on. By Nicola Cowie |
 | `Y2KFIX.ASM` | 8080 assembly source for `Y.COM` — patches century word at `0FA8Bh` to `"20"`. By Nicola Cowie (converted from original Z80 mnemonics to 8080 for compatibility with DRI `ASM.COM` + `LOAD.COM`) |
-| `Y2KFIX.HBA` | BASIC fix — patches DATE$ to 2026, shows before/after. **Lost on power off only.** By Nicola Cowie |
-| `DAYSET.HBA` | Day-of-week setter — pick Mon–Sun. **Persistent — run once.** |
+| `Y2KFIX.BAS` | BASIC fix — patches DATE$ to 2026, shows before/after. **Lost on power off only.** By Nicola Cowie |
+| `DAYSET.BAS` | Day-of-week setter — pick Mon–Sun. **Persistent — run once.** |
 
 ## References
 
