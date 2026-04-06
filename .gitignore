@@ -14,18 +14,18 @@ Progs/Terrain/OS_Terrain/
 # ASM subdirectories
 Progs/ASM/
 
-# HBA subdirectory (exclude DEMO1.HBA)
-Progs/HBA/DEMO1.HBA
+# HBA subdirectory (exclude DEMO1.BAS)
+Progs/HBA/DEMO1.BAS
 
 # Binary format (development, private)
-Progs/Terrain/TERRBIN.HBA
+Progs/Terrain/TERRBIN.BAS
 Progs/Terrain/TERRBIN_DEV.md
 Progs/Terrain/TERRAIN_DEV.md
 Progs/Terrain/CONTOUR.BIN
 Progs/Terrain/Test/TERRBIN.BAS
 
 # Diagnostic test programs (development)
-Progs/Terrain/DIAGFILE.HBA
+Progs/Terrain/DIAGFILE.BAS
 
 # ROM analysis (private)
 Progs/Terrain/Orig_ROMS/ROM_ANALYSIS.md
