@@ -46,5 +46,11 @@ HuskyHCOM/hunter-sync.manifest
 Progs/Tide/*.py
 Progs/Tide/__pycache__/
 
+# TidePy directory
+Progs/TidePy/
+
+# Screenshots
+Screenshot*.png
+
 # Archives
 *.7z

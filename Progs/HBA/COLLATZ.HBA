@@ -1,4 +1,4 @@
-1 REM COLLATZ.HBA
+1 REM collatz.hba
 2 REM Collatz conjecture sequence
 3 REM By kayto 21/03/2026
 10 PRINT "Collatz Conjecture"

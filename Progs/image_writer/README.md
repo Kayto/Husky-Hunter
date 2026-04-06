@@ -116,8 +116,10 @@ Zero bytes and 0xFF bytes are short-circuited for speed on the 4 MHz Z80.
 |------|-------------|
 | `png2hba.py` | Converter script |
 | `Source_Images/` | Input images |
-| `HIMAGE.HBA` | Example output (Atkinson dither) |
-| `preview_atkinson.png` | LCD-style preview of example output |
+| `HIMAGE.HBA` | Husky Hunter image program — ASCII source (tokenize before transfer) |
+| `HIMAGE2.HBA` | Husky dog image program — ASCII source (tokenize before transfer) |
+| `preview_atkinson.png` | LCD-style preview of HIMAGE.HBA output |
+| `HUSKY_preview.png` | LCD-style preview of HIMAGE2.HBA output |
 
 ---
 
