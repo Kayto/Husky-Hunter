@@ -128,6 +128,8 @@ TOKENS = {
     "ATN":      b"\xC4",     # confirmed from TTEST L90
     "TAN":      b"\xC7",     # confirmed from FUNC.HBA L70
     "VARPTR":   b"\xC1",     # confirmed from FUNC.HBA L130
+    "ARG":      b"\xBC",     # confirmed from BDOSFN2.HBA L170
+    "CALL":     b"\xBD",     # confirmed from BDOSFN2.HBA L180
     "LEN":      b"\xD1",     # confirmed from MORSE L122
     "VAL":      b"\xD3",     # confirmed from TTEST L120
     # $-functions absorb the open paren (no E0 after token)

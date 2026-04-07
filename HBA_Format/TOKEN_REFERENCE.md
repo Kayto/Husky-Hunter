@@ -140,6 +140,7 @@ Open paren `(` tokenizes separately as `E0`, so e.g. `INT(X)` → `B6 E0 58 29`.
 | Function | Hex | Notes |
 |----------|-----|-------|
 | `INT` | `B6` | |
+| `ARG` | `BC` | syntax: `P=ARG(N)` — loads Z80 E=high byte, C=low byte; P is dummy |
 | `ASC` | `B7` | |
 | `EOF` | `B0` | |
 | `SIN` | `C3` | |
@@ -152,6 +153,7 @@ Open paren `(` tokenizes separately as `E0`, so e.g. `INT(X)` → `B6 E0 58 29`.
 | `VAL` | `D3` | |
 | `EXP` | `DD` | |
 | `RND` | `BE` | dummy arg required: `RND(0)` |
+| `CALL` | `BD` | syntax: `X=CALL(addr)` — executes Z80 at addr, returns A register |
 | `TAN` | `C7` | |
 | `POS` | `B1` | |
 | `VARPTR` | `C1` | |
@@ -272,11 +274,11 @@ Token bytes shown where identified; `—` indicates token not yet mapped.
 | § | Keyword | Type | Token | Notes |
 |---|---------|------|-------|-------|
 | 5.2.1  | `ABS`              | Function       | `FE CC`                 | |
-| 5.2.2  | `ARG`              | Function       | —                       | Sets up argument for CALL |
+| 5.2.2  | `ARG`              | Function       | `BC`                    | `P=ARG(N)` — loads Z80 E=high byte, C=low byte; P is dummy |
 | 5.2.3  | `ASC`              | Function       | `B7`                    | Returns decimal equivalent of string |
 | 5.2.4  | `ATN`              | Function       | `C4`                    | Arc-tangent |
 | 5.3.1  | `BEEP`             | Command        | `9E`                    | |
-| 5.4.1  | `CALL`             | Statement      | —                       | Calls machine-code subroutine |
+| 5.4.1  | `CALL`             | Statement      | `BD`                    | `X=CALL(addr)` — executes Z80 at addr, returns A register |
 | 5.4.2  | `CHAR`             | Statement      | `FE 84`                 | Sets character size in graphics mode |
 | 5.4.3  | `CHR$(`            | Function       | `D4`                    | Returns string equivalent of argument |
 | 5.4.4  | `CIRCLE`           | Statement      | `FE 87`                 | Draws circle on LCD |

@@ -372,7 +372,7 @@ multiple files.
 before loading a new program after a crash.
 * **`REM` vs `'`:** Apostrophe works as REM and doesn't need a colon
 separator: `10 X=X+1' comment` saves a byte vs `10 X=X+1:REM comment`
-* **CALL / ARG / PUSH / POP:** Machine code interface. ARG loads E and C registers with a 16-bit value. PUSH/POP for the linkage stack.
+* **CALL / ARG / PUSH / POP:** Machine code interface (§4.8.6, §5.2.2, §5.4.1). Syntax: `P=ARG(N)` loads Z80 E = N DIV 256 (high byte), C = N MOD 256 (low byte); P is a dummy variable. `X=CALL(addr)` executes machine code at `addr` and returns the Z80 A register. For BDOS calls: `P=ARG(param*256 + fn): X=CALL(5)`. `ARG` as a standalone statement (without assignment) causes `*STX Error`. PUSH/POP for the linkage stack.
 * **EOF(n):** Returns -1 at end of file, 0 if more data. Same as MBASIC.
 * **EOF and CP/M record padding:** CP/M pads files to 128-byte record
 boundaries. `EOF(n)` may not trigger until a read actually fails on
@@ -420,5 +420,5 @@ on the line produce `?extra ignored`. Missing fields cause `?REDO from start` an
 
 
 
-*Last updated: March 2026*
+*Last updated: April 2026*
 *Source: Husky Hunter Manual V09F 1984 + hardware testing*
