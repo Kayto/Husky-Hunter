@@ -2,7 +2,12 @@
 
 Programs and tools for the **Husky Hunter** portable computer (NSC800-4 @ 4MHz, DEMOS 2.2 / CP/M 2.2, 240×64 LCD).
 
-The **`HBA/`** folder contains pre-built tokenized binaries for all programs — transfer any `.HBA` file to the Hunter via HCOM and run it directly from the DEMOS prompt without any LOAD/SAVE step.
+The focus for this repo is on Hunter BASIC (rather than the CP/M support) for the following reasons.
+
+* Pixel level control of the LCD screen.
+* Some interesting capability for sub routine links between BASIC and BDOS/Z80 Machine Code (rather than the more typical single shot loaders).
+
+The <b>`HBA/`</b> folder contains pre-built tokenized binaries for all programs — transfer any `.HBA` file to the Hunter via HCOM and run it directly from the DEMOS prompt without any LOAD/SAVE step.
 
 To convert your own `.BAS` source files, use the tools in [`HBA_Format/`](HBA_Format/README.md).
 
@@ -12,7 +17,7 @@ To convert your own `.BAS` source files, use the tools in [`HBA_Format/`](HBA_Fo
 
 ## Hunter BASIC Programs
 
-Programs that run on the Hunter.  Source files are in `Progs/` and `Y2K/`;
+Programs that run on the Hunter. Source files are in `Progs/` and `Y2K/`;
 pre-built binaries are in [`HBA/`](HBA/).
 
 | Program | Description | Status |
