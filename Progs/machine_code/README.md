@@ -107,6 +107,8 @@ LD A, B : RET    ; return step count
 
 **Comparison with [Progs/BASIC/COLLATZ.BAS](../BASIC/COLLATZ.BAS):** The BASIC version uses floating-point division + `INT()` for the even test and `3*N+1` via the interpreter — multiple tokens evaluated per step. The Z80 version uses `BIT 0,L` (single instruction) and register-pair shifts/adds. The speed difference should be dramatic on the 4 MHz NSC800.
 
+**Known issue:** The BASIC elapsed time occasionally reads too high. The RTC buffer is refreshed via BDOS fn 48 before each PEEK sequence, but the BCD digit reads are not atomic! — i suspect the clock ticks on/between PEEKs so the result can be corrupt/inconsistent. Re-running the same seed usually gives the correct and more consistent value.
+
 **Manual refs:** §4.8.6 (CALL/ARG), §9.7 (user code area)
 
 ---
