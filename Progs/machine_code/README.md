@@ -67,13 +67,46 @@ BDOS fn 2 needs C=2 (function) and E=ASCII character. `ARG(CH*256+2)` loads both
 
 ---
 
-## Token Status
+### COLLATMC.BAS — Collatz: BASIC vs Machine Code
 
-`ARG` and `CALL` token bytes confirmed from `BDOSFN2.HBA` (Hunter-native save, April 2026):
+**Purpose:** Side-by-side speed comparison of the Collatz conjecture sequence computed in interpreted BASIC versus a Z80 machine code subroutine called from BASIC. Both run the same seed and print step count + `TIME$` for comparison.
 
-| Keyword | Token |
-|---------|-------|
-| `ARG`   | `BC`  |
-| `CALL`  | `BD`  |
+**What it demonstrates:**
+- `POKE` installing a 33-byte Z80 routine into the user code area
+- `P=ARG(N)` passing a 16-bit seed — E=high byte, C=low byte → routine reassembles as HL
+- `S=CALL(62981)` returning step count in A register
+- BASIC floating-point interpreter overhead vs native Z80 integer arithmetic
 
-Both are now recorded in [HBA_Format/TOKEN_REFERENCE.md](../../HBA_Format/TOKEN_REFERENCE.md). Programs using `ARG`/`CALL` can be tokenised directly by the HBA toolchain.
+**Z80 routine (33 bytes at decimal 62981):**
+
+```z80
+LD H, E          ; seed high byte from ARG
+LD L, C          ; seed low byte → HL = seed
+LD B, 0          ; step counter
+; loop:
+LD A, H : OR A : JR NZ, not1
+LD A, L : CP 1 : JR Z, done
+; not1:
+INC B            ; steps++
+BIT 0, L         ; even/odd test
+JR NZ, odd
+; even:
+SRL H : RR L     ; HL = HL / 2
+JR loop
+; odd:
+PUSH HL : ADD HL, HL : POP DE : ADD HL, DE : INC HL  ; HL = 3*HL + 1
+JR loop
+; done:
+LD A, B : RET    ; return step count
+```
+
+**Constraints:**
+- 16-bit arithmetic: intermediate values must stay ≤ 65535 (no overflow detection)
+- Step count returned in A register: must be ≤ 255
+- Safe test seeds: 27 (111 steps, peak 9232), 97 (118 steps), 171 (124 steps)
+
+**Comparison with [Progs/BASIC/COLLATZ.BAS](../BASIC/COLLATZ.BAS):** The BASIC version uses floating-point division + `INT()` for the even test and `3*N+1` via the interpreter — multiple tokens evaluated per step. The Z80 version uses `BIT 0,L` (single instruction) and register-pair shifts/adds. The speed difference should be dramatic on the 4 MHz NSC800.
+
+**Manual refs:** §4.8.6 (CALL/ARG), §9.7 (user code area)
+
+---

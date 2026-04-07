@@ -25,7 +25,7 @@ pre-built binaries are in [`HBA/`](HBA/).
 | [log\_file](Progs/log_file/) | Performance file logger — logs CPU and memory samples to PERFLOG.DAT on the Hunter, with menu-driven readback | Working on hardware |
 | [image\_writer](Progs/image_writer/) | LCD image display — Hunter program shows images converted from PNG/JPEG by PC-side tool | Working on hardware |
 | [BASIC](Progs/BASIC/) | Short stand-alone programs — charset printer, Collatz sequence, Hello World graphic, system diagnostic | Working on hardware |
-| [machine\_code](Progs/machine_code/) | Machine code interface demos — Z80 routines called from Hunter BASIC via `ARG`/`CALL`; BDOS function proof-of-concept | Working on hardware |
+| [machine\_code](Progs/machine_code/) | Machine code interface demos — Z80 routines called from Hunter BASIC via `ARG`/`CALL`; BDOS console output and Collatz BASIC-vs-MC benchmark | Working on hardware |
 | [Y2K](Y2K/) | Y2K date fix — patches the ROM's hardcoded `19xx` century to `20xx` via a 12-byte COM utility or BASIC one-liner | Working on hardware |
 
 ## PC Tools
