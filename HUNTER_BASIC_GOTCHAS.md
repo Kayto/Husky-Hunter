@@ -114,28 +114,22 @@ Use `WRITE#` to create data files — it automatically quotes strings.
 
 ### BAS LOAD and programs
 
-`.BAS` files are plain ASCII text (numbered BASIC lines). They are
-transferred to the Hunter via HCOM as-is and display correctly when
-checked with CP/M `TYPE`. However, `LOAD` inside BAS has been observed to corrupt programs — line 10 of HIMAGE.BAS was garbled after `LOAD`
-despite the file being intact on disk.
+I originally created projects as ascii files named as `.hba` The source files being plain ASCII text (numbered BASIC lines). Whentransferred to the Hunter via HCOM they displayed correctly when checked with CP/M `TYPE`. However, loading/executing the files was observed to corrupt programs — despite the file being intact on disk. With hindsight this was a rather naive assumption on my part - that `hba` files are just plain ascii! 
 
-**Possible cause:**
-Hunter BASIC `LOAD` may expect a tokenised or
-intermediate format rather than raw ASCII. All `.BAS` files in this
+**Cause:**
+The Hunter expects a tokenised CP/M file format rather than raw ASCII text. All source files (named `.BAS`) in this
 project are plain ASCII text (numbered BASIC lines, CR+LF terminated).
-The tokenized `.HBA` format is the correct format the Hunter natively recognises. `LOAD` may partially
-work with ASCII files but misparse certain lines.
+The tokenized `.HBA` format is the correct format the Hunter natively recognises. `LOAD` partially
+works with ASCII files but misparses certain lines.
 
 `,A` flag is **not** supported (`LOAD "file",A` gives `*STX Error`).
 
-**Workaround:**
-Send the file via RS-232 while in BAS, so each numbered
-line is entered directly by the interpreter — this bypasses `LOAD`
-entirely and avoids any format mismatch.
+**Initial Workaround:**
+Send the file via RS-232 while in BAS, so each numbered line is entered directly by the interpreter. Enter the interpreter with `BAS`. Type `CRT` to mirror with a terminal emulator, such as TeraTerm. Then use the emulator 'Send' feature (per character with 15ms delay) to type the ASCII into the Hunter. Once done save the file and the Hunter tokenises the file. This 
+simulates native creation and avoids any format mismatch.
 
-**For investigation:**
-Analyse a Hunter side saved `.HBA` versus my ASCII
-based `.BAS`. This should help identify the differences for consideration.
+**Final fix:**
+I analysed the Hunter side saved `.HBA` files versus my ASCII based `.BAS`. This enabled identification of the tokens and file format to start creation of a tokeniser. This is documented elsewhere in this repo — see [HBA_Format/README.md](HBA_Format/README.md).
 
 - - -
 
