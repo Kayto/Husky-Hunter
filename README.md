@@ -6,6 +6,7 @@ The focus for this repo is on Hunter BASIC (rather than the CP/M support) for th
 
 * Pixel level control of the LCD screen.
 * Some interesting capability for sub routine links between BASIC and BDOS/Z80 Machine Code (rather than the more typical single shot loaders).
+* Bidirectional RS-232 with per-character send/receive (`LOPCHR`, `LINCHR`) and event-driven interrupt handlers (`ON COM`, `ON COMMS`, `ON POWER`) — more field data-collection language than home-micro BASIC.
 
 The <b>`HBA/`</b> folder contains pre-built tokenized binaries for all programs — transfer any `.HBA` file to the Hunter via HCOM and run it directly from the DEMOS prompt without any LOAD/SAVE step.
 
