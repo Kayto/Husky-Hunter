@@ -27,8 +27,8 @@ pre-built binaries are in [`HBA/`](HBA/).
 | [Tide](Progs/Tide/) | Self-contained tidal predictor — computes and plots 24-hour tide curves from 7 harmonic constituents, 6 built-in UK ports | Working on hardware |
 | [Morse](Progs/Morse/) | Morse code tape — type a message and watch it scroll across the LCD with audio output, ITU standard timing | Working on hardware |
 | [news\_feed](Progs/news_feed/) | BBC News headline ticker — Hunter program displays headlines sent by PC feed over RS-232 | Working on hardware |
-| [performance\_log](Progs/performance_log/) | Real-time PC performance strip-chart — Hunter program displays CPU/memory sent by PC feed over RS-232 | Working on hardware |
-| [log\_file](Progs/log_file/) | Performance file logger — logs CPU and memory samples to PERFLOG.DAT on the Hunter, with menu-driven readback | Working on hardware |
+| [performance\_log](Progs/performance_log/) | Real-time PC performance display — Hunter program displays CPU/memory sent by PC feed over RS-232 | Working on hardware |
+| [log\_file](Progs/log_file/) | Performance file logger — logs CPU and memory samples sent by PC feed over RS-232 to PERFLOG.DAT on the Hunter, with menu-driven readback | Working on hardware |
 | [image\_writer](Progs/image_writer/) | LCD image display — Hunter program shows images converted from PNG/JPEG by PC-side tool | Working on hardware |
 | [BASIC](Progs/BASIC/) | Short stand-alone programs — charset printer, Collatz sequence, Hello World graphic, system diagnostic | Working on hardware |
 | [machine\_code](Progs/machine_code/) | Machine code interface demos — Z80 routines called from Hunter BASIC via `ARG`/`CALL`; BDOS console output and Collatz BASIC-vs-MC benchmark | Working on hardware |
