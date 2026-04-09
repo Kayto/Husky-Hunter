@@ -22,6 +22,9 @@ HBA_Format/HSYNC/
 # BASIC subfolder (exclude DEMO1.BAS)
 Progs/BASIC/DEMO1.BAS
 
+# HBA binaries (exclude DEMO1.HBA)
+HBA/DEMO1.HBA
+
 # Binary format (development, private)
 Progs/Terrain/TERRBIN.BAS
 Progs/Terrain/TERRBIN_DEV.md
