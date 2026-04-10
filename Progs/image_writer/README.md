@@ -155,7 +155,7 @@ A run-accumulation decoder was partially explored  and tested — it uses the sa
 
 ### Direct I/O Mode (Developed)
 
-ROM disassembly revealed the Hunter uses a **Hitachi HD61830** LCD controller with internal VRAM accessible via I/O ports 0x20–0x21. The `IMGDIO.BAS` decoder writes image bytes directly to the HD61830 via `OUT 33,12:OUT 32,V` — no bit unpacking, no PSET/LINE calls:
+Thanks to a pointer from Nicola Cowie (avoiding too much digging in the wrong memory mapped rabbit hole) that the LCD was I/O driven. ROM disassembly revealed the Hunter uses a **Hitachi HD61830** LCD controller with internal VRAM accessible via I/O ports 0x20–0x21. The `IMGDIO.BAS` decoder writes image bytes directly to the HD61830 via `OUT 33,12:OUT 32,V` — no bit unpacking, no PSET/LINE calls:
 
 ```basic
 7 OUT 33,10:OUT 32,0
