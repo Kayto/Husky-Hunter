@@ -8,7 +8,7 @@ Converts PNG/JPEG images to Hunter BASIC programs (`.BAS`) that display on the H
 
 Working — tested on real Husky Hunter hardware. The Python converter produces valid `.BAS` source files that tokenize and render correctly on the 240×64 LCD. Note: BAS `LOAD` may corrupt line 10 (see [Generated HBA](#generated-hba)).
 
-**Development:** A horizontal-run (hline) decoder was developed to improve rendering speed. Instead of unpacking bitmap bytes on the Hunter, the converter pre-computes horizontal runs of consecutive pixels at generation time. The Hunter decoder is a trivial `READ N: FOR I=1 TO N: READ A,B: LINE(A,Y)-(B,Y)` loop — no bit math at all. See [Development Notes](#development-notes--could-it-be-faster) for results.
+**Development:** A direct I/O decoder (`IMGDIO.BAS`) was developed that writes image bytes directly to the HD61830 LCD controller via `OUT` statements, bypassing BASIC's PSET/LINE entirely. This achieves a 25x speedup over the baseline. A horizontal-run (hline) decoder (`IMGHLIN.BAS`) pre-computes runs at generation time for a 12x speedup. See [Development Notes](#development-notes--could-it-be-faster) for results.
 
 ## Usage
 
@@ -122,6 +122,8 @@ Zero bytes and 0xFF bytes are short-circuited for speed on the 4 MHz Z80.
 | `HIMAGE.BAS` | Husky Hunter image program — ASCII source (tokenize before transfer) |
 | `HIMAGE2.BAS` | Husky dog image program — ASCII source (tokenize before transfer) |
 | `IMGHLIN.BAS` | Hline decoder — pre-computed horizontal runs of HIMAGE (tokenize before transfer) |
+| `IMGDIO.BAS` | Direct I/O decoder — bit-reversed data written to HD61830 via OUT (tokenize before transfer) |
+| `gen_imgdio.py` | Converter: data-mode BAS → direct I/O format (bit-reversed for HD61830 LSB-left) |
 | `preview_atkinson.png` | LCD-style preview of HIMAGE.HBA output |
 | `HUSKY_preview.png` | LCD-style preview of HIMAGE2.HBA output |
 
@@ -133,7 +135,7 @@ The data-mode decoder is already optimised with zero-byte and 0xFF short-circuit
 
 ### Hline Mode (Developed)
 
-A horizontal-run (hline) format was developed `igmghlin.bas` that pre-computes horizontal runs at generation time using `gen_hline.py`. The Hunter decoder becomes trivially simple:
+A horizontal-run (hline) format was developed (`IMGHLIN.BAS`) that pre-computes horizontal runs at generation time using `gen_hline.py`. The Hunter decoder becomes trivially simple:
 
 ```basic
 10 FOR Y=0 TO 63
@@ -149,12 +151,26 @@ No bit unpacking, no byte loops — all the work is done offline by Python. Each
 
 A run-accumulation decoder was partially explored  and tested — it uses the same DATA format as data mode but merges consecutive set pixels across byte boundaries into `LINE` calls at decode time. I gave it up for the `gen_hline.py` option.
 
+**Result: 50 seconds** (12x faster than HIMAGE's 617s).
 
-### Machine-Code LCD Access (Investigated — Not Viable?)
+### Direct I/O Mode (Developed)
 
-The Hunter's LCD graphics framebuffer is **not memory-mapped** to the Z80 address space. The manual (§4.9.5.6) explicitly states the graphics screen "cannot be re-created from RAM memory." Turning to the MAME driver source this emulator only implements text-mode display (32×4 character grid at RAM offset 0). The `PSET`/`LINE`/`CIRCLE` commands are implemented inside the BASIC interpreter EPROMs (0x0000–0x3FFF) and are not exposed as BIOS or BDOS entry points.
+ROM disassembly revealed the Hunter uses a **Hitachi HD61830** LCD controller with internal VRAM accessible via I/O ports 0x20–0x21. The `IMGDIO.BAS` decoder writes image bytes directly to the HD61830 via `OUT 33,12:OUT 32,V` — no bit unpacking, no PSET/LINE calls:
 
-The only documented MC interface (`ARG`/`CALL`) accesses BDOS functions, which are text-mode character I/O only (fn 1, 2, 6, 9, etc.). There are no BDOS calls for pixel-level graphics. Without ROM disassembly to locate the firmware PSET/LINE entry points and the LCD controller interface, a Z80 machine-code routine cannot write pixels directly.
+```basic
+7 OUT 33,10:OUT 32,0
+8 OUT 33,11:OUT 32,0
+10 FOR Y=0 TO 63
+20 FOR B=0 TO 29
+25 READ V
+30 OUT 33,12:OUT 32,V
+40 NEXT B
+50 NEXT Y
+```
+
+The HD61830 uses **LSB = leftmost pixel**, opposite to the MSB-first packing in data mode. `gen_imgdio.py` bit-reverses each byte when generating the DATA statements.
+
+**Result: 25 seconds** (25x faster than HIMAGE's 617s). The remaining bottleneck is BASIC interpreter overhead on each READ/OUT cycle.
 
 ### RLE Mode for Sparse Images
 

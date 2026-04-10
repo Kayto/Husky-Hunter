@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """gen_hline.py - Convert DATA-mode BAS to horizontal-run (hline) format.
+By Kayto 21/03/2026
+Licensed under the MIT License. See LICENSE file for details.
 
 Reads a data-mode HIMAGE/HIMAGE2 BAS file, unpacks the bitmap bytes,
 computes horizontal runs per row, and outputs a .BAS with a trivial
