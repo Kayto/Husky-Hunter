@@ -8,6 +8,8 @@ Converts PNG/JPEG images to Hunter BASIC programs (`.BAS`) that display on the H
 
 Working — tested on real Husky Hunter hardware. The Python converter produces valid `.BAS` source files that tokenize and render correctly on the 240×64 LCD. Note: BAS `LOAD` may corrupt line 10 (see [Generated HBA](#generated-hba)).
 
+**Development:** A horizontal-run (hline) decoder was developed to improve rendering speed. Instead of unpacking bitmap bytes on the Hunter, the converter pre-computes horizontal runs of consecutive pixels at generation time. The Hunter decoder is a trivial `READ N: FOR I=1 TO N: READ A,B: LINE(A,Y)-(B,Y)` loop — no bit math at all. See [Development Notes](#development-notes--could-it-be-faster) for results.
+
 ## Usage
 
 ```
@@ -115,9 +117,11 @@ Zero bytes and 0xFF bytes are short-circuited for speed on the 4 MHz Z80.
 | File | Description |
 |------|-------------|
 | `png2hba.py` | Converter script |
+| `gen_hline.py` | Converter: data-mode BAS → hline (pre-computed horizontal runs) format |
 | `Source_Images/` | Input images |
 | `HIMAGE.BAS` | Husky Hunter image program — ASCII source (tokenize before transfer) |
 | `HIMAGE2.BAS` | Husky dog image program — ASCII source (tokenize before transfer) |
+| `IMGHLIN.BAS` | Hline decoder — pre-computed horizontal runs of HIMAGE (tokenize before transfer) |
 | `preview_atkinson.png` | LCD-style preview of HIMAGE.HBA output |
 | `HUSKY_preview.png` | LCD-style preview of HIMAGE2.HBA output |
 
@@ -125,8 +129,36 @@ Zero bytes and 0xFF bytes are short-circuited for speed on the 4 MHz Z80.
 
 ## Development Notes — Could It Be Faster?
 
-The data-mode decoder is already optimised with zero-byte and 0xFF short-circuits, but drawing a full 240×64 image pixel-by-pixel through BASIC is slow!
-- **Machine-code POKE loop** — Write a small Z80 routine (via `DEFUSR` / `USR()`) that unpacks each DATA byte directly into the LCD framebuffer. Would bypass the BASIC interpreter entirely for pixel writes. Potentially 10–50× faster.
-- **RLE mode for sparse images** — Already implemented. For logos or line art with large blank areas, RLE uses far fewer LINE calls and finishes faster than data mode.
-- **Reduce resolution** — A smaller target (e.g. 120×32) renders in roughly ¼ the time. Use `-W 120 -H 32`.
-- **Pre-computed LINE runs in data mode** — Instead of bit-unpacking every byte, the converter could detect horizontal runs and emit LINE statements directly within the DATA loop. Trades file size for speed.
+The data-mode decoder is already optimised with zero-byte and 0xFF short-circuits, but drawing a full 240×64 image pixel-by-pixel through BASIC is slow. Three approaches were investigated:
+
+### Hline Mode (Developed)
+
+A horizontal-run (hline) format was developed `igmghlin.bas` that pre-computes horizontal runs at generation time using `gen_hline.py`. The Hunter decoder becomes trivially simple:
+
+```basic
+10 FOR Y=0 TO 63
+20 READ N:IF N=0 THEN 60
+30 FOR I=1 TO N
+40 READ A,B
+50 IF A=B THEN PSET(A,Y) ELSE LINE(A,Y)-(B,Y)
+55 NEXT I
+60 NEXT Y
+```
+
+No bit unpacking, no byte loops — all the work is done offline by Python. Each horizontal run of consecutive set pixels becomes a single `LINE` call. The tradeoff is file size: for dense dithered photos the hline format is significantly larger (~20 KB vs ~5 KB for data mode) due to the high number of short runs. For sparse images (logos, line art) it would be more compact.
+
+A run-accumulation decoder was partially explored  and tested — it uses the same DATA format as data mode but merges consecutive set pixels across byte boundaries into `LINE` calls at decode time. I gave it up for the `gen_hline.py` option.
+
+
+### Machine-Code LCD Access (Investigated — Not Viable?)
+
+The Hunter's LCD graphics framebuffer is **not memory-mapped** to the Z80 address space. The manual (§4.9.5.6) explicitly states the graphics screen "cannot be re-created from RAM memory." Turning to the MAME driver source this emulator only implements text-mode display (32×4 character grid at RAM offset 0). The `PSET`/`LINE`/`CIRCLE` commands are implemented inside the BASIC interpreter EPROMs (0x0000–0x3FFF) and are not exposed as BIOS or BDOS entry points.
+
+The only documented MC interface (`ARG`/`CALL`) accesses BDOS functions, which are text-mode character I/O only (fn 1, 2, 6, 9, etc.). There are no BDOS calls for pixel-level graphics. Without ROM disassembly to locate the firmware PSET/LINE entry points and the LCD controller interface, a Z80 machine-code routine cannot write pixels directly.
+
+### RLE Mode for Sparse Images
+
+Already implemented in `png2hba.py`. For logos or line art with large blank areas, RLE uses far fewer `LINE` calls and finishes faster than data mode. Selected automatically when `--mode auto` estimates it will be smaller.
+### Reduce resolution
+ An obvious one - A smaller target (e.g. 120×32) renders in roughly ¼ the time. Use `-W 120 -H 32`.
+

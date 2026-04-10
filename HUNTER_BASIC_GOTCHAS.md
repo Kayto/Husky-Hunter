@@ -159,6 +159,8 @@ Hunter BASIC errors are 3-character codes (§4.14, page 4-47):
 
 If the Hunter locks up due to bad code and cannot be interrupted normally:
 
+### Method 1 — Ctrl+C Boot
+
 1. Power off.
 2. Power on while holding **Ctrl** and **C** simultaneously. The Hunter should beep twice.
 3. Release all keys.
@@ -166,6 +168,22 @@ If the Hunter locks up due to bad code and cannot be interrupted normally:
 
 > This bypasses the running program and forces a cold reset. Useful when a
 > runaway loop or bad POKE makes the keyboard unresponsive.
+
+### Method 2 — Battery Pull + X/P Boot
+
+For hard lockups where the power button is unresponsive (e.g. bad page
+register write), this method forces a full hardware reset:
+
+1. Remove **all batteries** (4× AA + Ni/Cd backup) and leave for 30 seconds.
+2. Reinsert the batteries.
+3. Hold down the **X** and **P** keys simultaneously.
+4. Press the **power** key — the Hunter should beep.
+5. Release all keys — the Hunter should boot.
+6. If it does not boot, enter the code **^PKT@$** and the Hunter should boot.
+
+> **Warning:** This is **very timing-dependent** and may take several
+> tries. Files in battery-backed RAM should survive the battery pull if
+> the Ni/Cd backup retains charge during the 30-second window.
 
 - - -
 
@@ -366,6 +384,7 @@ Press BREAK to escape.
 ## Miscellaneous
 
 * **`MOD` operator does not exist:** Hunter BASIC has no `MOD` keyword — using it causes `*STX Error`. Use `INT(A/B)` arithmetic instead: `M = A - INT(A/B)*B`
+* **`\` (integer division) does not exist:** Hunter BASIC has no backslash integer-division operator. Using it causes `*ARG Error` (and displays as ¥ on the LCD — the character ROM maps 0x5C to yen). Use `INT(A/B)` instead: `Q = INT(A/B)`
 * **Max files:** Default MAXFILES is 1. Set `MAXFILES=n` before opening
 multiple files.
 * **`NEW` clears everything:** Variables, arrays, and the program. Use it

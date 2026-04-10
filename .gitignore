@@ -1,3 +1,6 @@
+# Development folder (local dev work, not for release)
+Dev/
+
 # Virtual environment
 .venv/
 
