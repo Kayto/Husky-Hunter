@@ -194,7 +194,7 @@ The BASIC `OUT` loop in IMGDIO is still bottlenecked by interpreter overhead (~1
 
 The Z80 routine does a tight busy-wait + OUT loop: `IN A,(0x21) / RLCA / JR C` for HD61830 busy check, then `OUT (0x21),0x0C` (write command) followed by `OUT (0x20),data` for each byte. The visual effect is dramatically improved — data loads in text mode, then `SCREEN 1` + MC blast makes the image appear near-instantly.
 
-**Result: Pending hardware test** (expected ~17s total — POKE loop is ~30% faster than OUT loop, plus instant display phase).
+**Result: 17 seconds** (POKE loop is ~30% faster than OUT loop, plus instant display phase - nice!).
 
 ### RLE Mode for Sparse Images
 
