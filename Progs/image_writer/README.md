@@ -8,7 +8,7 @@ Converts PNG/JPEG images to Hunter BASIC programs (`.BAS`) that display on the H
 
 Working — tested on real Husky Hunter hardware. The Python converter produces valid `.BAS` source files that tokenize and render correctly on the 240×64 LCD. Note: BAS `LOAD` may corrupt line 10 (see [Generated HBA](#generated-hba)).
 
-**Development:** A direct I/O decoder (`IMGDIO.BAS`) was developed that writes image bytes directly to the HD61830 LCD controller via `OUT` statements, bypassing BASIC's PSET/LINE entirely. This achieves a 25x speedup over the baseline. A horizontal-run (hline) decoder (`IMGHLIN.BAS`) pre-computes runs at generation time for a 12x speedup. See [Development Notes](#development-notes--could-it-be-faster) for results.
+**Development:** A machine-code accelerated decoder (`IMGMC.BAS`) loads image data into a RAM buffer via BASIC, then a 30-byte Z80 routine blasts all 1920 bytes to the HD61830 LCD controller in ~13ms. A direct I/O decoder (`IMGDIO.BAS`) writes bytes via `OUT` statements, bypassing BASIC's PSET/LINE entirely for a 25x speedup. A horizontal-run (hline) decoder (`IMGHLIN.BAS`) pre-computes runs at generation time for a 12x speedup. See [Development Notes](#development-notes--could-it-be-faster) for results.
 
 ## Usage
 
@@ -124,6 +124,8 @@ Zero bytes and 0xFF bytes are short-circuited for speed on the 4 MHz Z80.
 | `IMGHLIN.BAS` | Hline decoder — pre-computed horizontal runs of HIMAGE (tokenize before transfer) |
 | `IMGDIO.BAS` | Direct I/O decoder — bit-reversed data written to HD61830 via OUT (tokenize before transfer) |
 | `gen_imgdio.py` | Converter: data-mode BAS → direct I/O format (bit-reversed for HD61830 LSB-left) |
+| `IMGMC.BAS` | MC-accelerated decoder — Z80 routine blasts RAM buffer to HD61830 (tokenize before transfer) |
+| `gen_imgmc.py` | Converter: data-mode BAS → MC-accelerated format (bit-reversed, with Z80 blast routine) |
 | `preview_atkinson.png` | LCD-style preview of HIMAGE.HBA output |
 | `HUSKY_preview.png` | LCD-style preview of HIMAGE2.HBA output |
 
@@ -171,6 +173,28 @@ Thanks to a pointer from Nicola Cowie (avoiding too much digging in the wrong me
 The HD61830 uses **LSB = leftmost pixel**, opposite to the MSB-first packing in data mode. `gen_imgdio.py` bit-reverses each byte when generating the DATA statements.
 
 **Result: 25 seconds** (25x faster than HIMAGE's 617s). The remaining bottleneck is BASIC interpreter overhead on each READ/OUT cycle.
+
+### MC-Accelerated Mode (Developed)
+
+The BASIC `OUT` loop in IMGDIO is still bottlenecked by interpreter overhead (~13ms per READ+OUT pair). `IMGMC.BAS` eliminates this by splitting into two phases:
+
+1. **Phase 1 (BASIC):** READ all 1920 bit-reversed image bytes into a RAM buffer at 0xC000 (49152) via POKE
+2. **Phase 2 (MC):** A 30-byte Z80 machine code routine at F605H (62981) blasts the entire buffer to the HD61830 in ~13ms
+
+```basic
+6 FOR I=0 TO 29:READ V:POKE 62981+I,V:NEXT I
+8 FOR I=49152 TO 51071
+9 READ V:POKE I,V
+10 NEXT I
+11 SCREEN 1
+12 OUT 33,10:OUT 32,0
+13 OUT 33,11:OUT 32,0
+14 P=ARG(0):X=CALL(62981)
+```
+
+The Z80 routine does a tight busy-wait + OUT loop: `IN A,(0x21) / RLCA / JR C` for HD61830 busy check, then `OUT (0x21),0x0C` (write command) followed by `OUT (0x20),data` for each byte. The visual effect is dramatically improved — data loads in text mode, then `SCREEN 1` + MC blast makes the image appear near-instantly.
+
+**Result: Pending hardware test** (expected ~17s total — POKE loop is ~30% faster than OUT loop, plus instant display phase).
 
 ### RLE Mode for Sparse Images
 
