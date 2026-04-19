@@ -1,5 +1,7 @@
 # Development folder (local dev work, not for release)
-Dev/
+Dev/*
+!Dev/elta/
+Dev/elta/*.jpg
 
 # Virtual environment
 .venv/

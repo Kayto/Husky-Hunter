@@ -1,0 +1,29 @@
+1 REM ELTA.BAS v1.0 - Zeiss Elta Reader
+2 REM Receives data from Elta total station
+3 REM By kayto 19/04/2026
+4 REM For Husky Hunter (NSC800, 240x64 LCD)
+10 KEY OFF:PRINT CHR$(1);
+12 PRINT "Zeiss Elta Reader"
+14 PRINT
+20 REM --- SETUP SERIAL ---
+22 POKE 63480,6:POKE 63481,6   :REM TX/RX baud = 1200
+24 POKE 63487,1:POKE 63488,1   :REM TX/RX parity = Odd
+26 POKE 63482,0                 :REM CTS = No
+28 POKE 63493,0                 :REM RX protocol = None
+30 PRINT "Awaiting Elta data..."
+32 PRINT "ESC to quit"
+34 PRINT
+100 REM === MAIN LOOP ===
+102 ON COM GOSUB 200
+104 COM ON
+110 K$=INKEY$:IF K$=CHR$(27) THEN GOTO 300
+120 GOTO 110
+200 REM === DATA RECEIVED ===
+202 LINPUT A$
+204 IF A$="" THEN RETURN
+206 PRINT A$
+208 RETURN
+300 REM === EXIT ===
+302 COM OFF
+304 PRINT :PRINT "Done."
+306 END
