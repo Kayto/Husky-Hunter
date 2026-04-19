@@ -7,7 +7,7 @@
 14 PRINT
 20 REM --- SETUP SERIAL ---
 22 POKE 63480,6:POKE 63481,6   :REM TX/RX baud = 1200
-24 POKE 63487,1:POKE 63488,1   :REM TX/RX parity = Odd
+24 POKE 63487,1:POKE 63488,1   :REM TX/RX parity = Odd (7-bit)
 26 POKE 63482,0                 :REM CTS = No
 28 POKE 63493,0                 :REM RX protocol = None
 30 PRINT "Awaiting Elta data..."

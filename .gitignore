@@ -2,6 +2,7 @@
 Dev/*
 !Dev/elta/
 Dev/elta/*.jpg
+Dev/elta/elta_sim.py
 
 # Virtual environment
 .venv/

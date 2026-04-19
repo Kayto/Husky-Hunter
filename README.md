@@ -47,6 +47,7 @@ Tools that run on the PC to support the Hunter programs above.
 ## Reference
 
 * [HUNTER\_BASIC\_GOTCHAS.md](HUNTER_BASIC_GOTCHAS.md) — Hunter BASIC syntax differences, reserved words, and quirks discovered during hardware testing
+* [RS232\_REFERENCE.md](RS232_REFERENCE.md) — RS-232 serial port configuration via POKE — baud rates, parity, handshaking, and BASIC I/O commands
 * [HBA\_Format/](HBA_Format/README.md) — Tokenizer tools (`HBA_Tokenizer.exe`, `hba_tokenize.py`), file format reference, and token table
 * [HBA\_Format/TOKEN\_REFERENCE.md](HBA_Format/TOKEN_REFERENCE.md) — Reverse-engineered Hunter BASIC token byte assignments
 
