@@ -3,6 +3,8 @@ Dev/*
 !Dev/elta/
 Dev/elta/*.jpg
 Dev/elta/elta_sim.py
+Dev/elta/ELTAC.BAS
+Dev/elta/ELTAC.HBA
 
 # Virtual environment
 .venv/

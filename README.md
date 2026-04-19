@@ -70,6 +70,18 @@ Micro Live S02E02: https://www.youtube.com/watch?v=y1ZBr3NInow&t=739s
 
 * [TheEPROM9 — Husky Hunter/Hunter 2](https://www.theeprom9.co.uk/vintage-computers/husky-computer-archive/husky-hunterhunter-2) — hardware teardowns, ROM dumps, reverse engineering efforts, demo code listings, and LCD datasheet
 
+## GitHub Community
+
+* [Kayto/Husky-Hunter](https://github.com/Kayto/Husky-Hunter) — Hunter BASIC programs, HBA tokenizer, HCOM launcher, and RS-232 tools for the 1983 Husky Hunter
+
+Other Husky-related projects and resources on GitHub:
+
+
+* [NicolaCowie/HCOM](https://github.com/NicolaCowie/HCOM) — original HCOM PC-to-Husky file transfer software (v1.0). Source code in C and Assembly for Hunter 1 & 2, Hawk, Hunter 16 and FS2
+* [sleepygecko/husky](https://github.com/sleepygecko/husky) — Husky Computers related information, HCOM WIN11 binaries, and Hunter 16 manual chapters
+* [TheEPROM9/Husky-Computer-Software](https://github.com/TheEPROM9/Husky-Computer-Software) — collected software for Husky computers. CP/M, DEMOS, HCOM, and MS-DOS utilities from the DVW Microelectronics Husky through to MS-DOS models
+* [TheEPROM9/Husky-Computer-ROM-Images](https://github.com/TheEPROM9/Husky-Computer-ROM-Images) — archive of ROM images pulled from Husky computers: Hunter, Hunter 16, Hunter 16-80, Hawk, FS2, FS3, and more
+
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
