@@ -32,6 +32,7 @@ pre-built binaries are in [`HBA/`](HBA/).
 | [image\_writer](Progs/image_writer/) | LCD image display — Hunter program shows images converted from PNG/JPEG by PC-side tool | Working on hardware |
 | [BASIC](Progs/BASIC/) | Short stand-alone programs — charset printer, Collatz sequence, Hello World graphic, system diagnostic | Working on hardware |
 | [machine\_code](Progs/machine_code/) | Machine code interface demos — Z80 routines called from Hunter BASIC via `ARG`/`CALL`; BDOS console output and Collatz BASIC-vs-MC benchmark | Working on hardware |
+| [PONGGAME](Progs/pong/) | Single-player Pong — paddle, collision, beep on miss, configurable speed. 451 bytes of Z80 MC. Is this the first game for the Husky Hunter! | Working on hardware |
 | [Animation](Progs/Animation/) | MC-driven sprite animations — horizontal, wave-motion, two-sprite, and Pong-style bouncing ball, all running in Z80 machine code with BASIC loader | Working on hardware |
 | [Y2K](Y2K/) | Y2K date fix — patches the ROM's hardcoded `19xx` century to `20xx` via a 12-byte COM utility or BASIC one-liner | Working on hardware |
 

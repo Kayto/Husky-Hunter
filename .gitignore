@@ -40,8 +40,11 @@ Progs/Terrain/TERRAIN_DEV.md
 Progs/Terrain/CONTOUR.BIN
 Progs/Terrain/Test/TERRBIN.BAS
 
-# Diagnostic test programs (development)
+# Diagnostic/test programs (development)
 Progs/Terrain/DIAGFILE.BAS
+
+# Generated image variant (development)
+Progs/image_writer/HUSKY.BAS
 
 # ROM analysis (private)
 Docs/Orig_ROMS/ROM_ANALYSIS.md
