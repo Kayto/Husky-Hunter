@@ -2,7 +2,10 @@
 Dev/*
 !Dev/elta/
 Dev/elta/*.jpg
+Dev/elta/*.pdf
+Dev/elta/*.txt
 Dev/elta/elta_sim.py
+Dev/elta/ELTA2.BAS
 Dev/elta/ELTAC.BAS
 Dev/elta/ELTAC.HBA
 

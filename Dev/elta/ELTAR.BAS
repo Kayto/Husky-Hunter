@@ -1,0 +1,43 @@
+1 REM ELTAR.BAS v1.0 - Zeiss Elta Normal Mode
+2 REM Auto-handshake: A=>B, #Data=>Q
+3 REM By kayto 20/04/2026
+4 REM For Husky Hunter (NSC800, 240x64 LCD)
+10 KEY OFF:PRINT CHR$(1);
+12 PRINT "Zeiss Elta - Normal Mode"
+14 PRINT
+20 REM --- SETUP SERIAL ---
+22 POKE 63480,6:POKE 63481,6   :REM TX/RX baud = 1200
+24 POKE 63487,1:POKE 63488,1   :REM TX/RX parity = Odd (7-bit)
+26 POKE 63482,0                 :REM CTS = No
+28 POKE 63493,0                 :REM RX protocol = None
+30 PRINT "Awaiting Elta... ESC to quit"
+32 PRINT
+100 REM === WAIT FOR HANDSHAKE CHAR ===
+102 LINCHR C
+104 IF C=0 THEN GOSUB 500:GOTO 102
+106 IF C=65 THEN GOTO 200       :REM A (65) - Elta wants to send
+108 GOTO 102
+200 REM === GOT A: REPLY B+CR+LF IMMEDIATELY ===
+202 LOPCHR 66,13,10             :REM B + CR + LF
+204 PRINT "< A  > B"
+206 A$=""
+210 REM === READ DATA RECORD CHAR BY CHAR ===
+212 LINCHR C
+214 IF C=0 THEN GOTO 212        :REM wait (no ESC check - must be fast)
+216 IF C=2 THEN GOTO 212        :REM skip STX (#)
+218 IF C=10 THEN GOTO 212       :REM skip LF
+220 IF C=13 THEN GOTO 260       :REM CR = end of record
+222 A$=A$+CHR$(C)
+224 GOTO 212
+260 REM === RECORD COMPLETE: REPLY Q+CR+LF ===
+262 LOPCHR 81,13,10             :REM Q + CR + LF
+264 PRINT A$
+266 A$=""
+268 GOTO 102
+500 REM === ESC CHECK (only when idle) ===
+502 K$=INKEY$:IF K$=CHR$(27) THEN GOTO 600
+504 RETURN
+600 REM === EXIT ===
+602 KEY ON
+604 PRINT :PRINT "Done."
+606 END
