@@ -2,6 +2,8 @@
 
 A 4×4 ball bounces around the screen. Move the paddle to intercept it — miss and you'll hear a beep.
 
+Demo video: [ponggame.mp4](ponggame.mp4)
+
 ## Status
 
 **v1.0 — Working.** Based on PONG7 development iteration (7 iterations, collision + beep).
@@ -49,6 +51,7 @@ Edit these constants at the top of `gen_ponggame.py` then regenerate:
 | `gen_ponggame.py` | Python generator — assembles Z80 MC and outputs `PONGGAME.BAS` + `PONGGAME.HBA` |
 | `PONGGAME.BAS` | BASIC listing — loads MC, draws net, runs game |
 | `PONGGAME.HBA` | Tokenised version for transfer via HCOM |
+| `ponggame.mp4` | Demo video capture of `PONGGAME` running |
 
 ## Usage
 
@@ -71,3 +74,5 @@ python Progs/pong/gen_ponggame.py
 ## Development Notes
 
 Full development history (PONG through PONG7, 7 iterations) is documented in [Dev/pong/PONG_DEV.md](../../Dev/pong/PONG_DEV.md).
+
+Demo capture: [ponggame.mp4](ponggame.mp4)
