@@ -1,0 +1,69 @@
+# file opened: COLLATMC.asm
+ 1    0000              ; COLLATMC.asm - Z80 Collatz sequence routine
+ 2    0000              ; Source for the 33-byte MC inline in COLLATMC.BAS (POKEd at lines 32-36)
+ 3    0000              ; By Kayto April 2026
+ 4    0000              ;
+ 5    0000              ; No generator - bytes are hand-assembled directly into the BASIC POKE lines.
+ 6    0000              ;
+ 7    0000              ; Entry (via Hunter BASIC ARG/CALL interface):
+ 8    0000              ;   E = seed high byte, C = seed low byte  (ARG sets both before CALL)
+ 9    0000              ;   e.g. P=ARG(INT(N)) : S=CALL(62981)
+10    0000              ; Exit:
+11    0000              ;   A = step count (returned as result of CALL)
+12    0000              ;
+13    0000              ; Limits: seed intermediates must fit 16-bit (intermediates can exceed seed).
+14    0000              ;         step count must be <= 255.
+15    0000              ;   Safe test seeds: 27 (111 steps), 97 (118 steps), 171 (124 steps).
+16    0000              ;
+17    0000              ; MC loaded at F605H (62981) - user code area, 50 bytes reserved by OS.
+18    0000              ; Uses 33 of the 50 available bytes.
+19    0000              ;
+20    0000              ; Assembler: compatible with Pasmo / SJASM+  (Intel-style, H-suffix hex)
+21    0000
+22    0000              ROUTINE_BASE    EQU     0F605H
+23    0000
+24    0000                              ORG     ROUTINE_BASE
+25    F605
+26    62981   99                                      LD      H,E             ; HL = seed  (E=high, C=low from ARG)
+27    62982  105                                      LD      L,C
+28    62983    6   0                               LD      B,0             ; B = step counter
+29    F609
+30    F609              ; -------- MAIN LOOP --------
+31    F609              ; Termination check: n=1 means done.
+32    F609              ; H is tested first: if H!=0 then n>255 so n cannot be 1, skip the L check.
+33    F609              ; This avoids a false positive (e.g. n=256 has H=1, L=0: L!=1 anyway, but
+34    F609              ; checking H first is cheaper and makes the intent explicit).
+35    F609              loop:
+36    62985  124                                      LD      A,H
+37    62986  183                                      OR      A               ; sets Z if H = 0
+38    62987   32   5                               JR      NZ,step         ; H != 0: n > 255, cannot be 1
+39    62989  125                                      LD      A,L
+40    62990  254   1                               CP      1               ; n = 1?
+41    62992   40  18                               JR      Z,done          ; yes: sequence complete
+42    F612
+43    F612              step:
+44    62994    4                                      INC     B               ; step++
+45    F613
+46    F613              ; Test parity: BIT 0,L sets Z if even
+47    62995  203  69                               BIT     0,L
+48    62997   32   6                               JR      NZ,odd          ; odd: go to 3n+1 branch
+49    F617
+50    F617              ; Even: n = n / 2  (logical right-shift HL by 1)
+51    62999  203  60                               SRL     H
+52    63001  203  29                               RR      L
+53    63003   24 236                               JR      loop
+54    F61D
+55    F61D              ; Odd: n = 3n + 1  (= 2n + n + 1 = HL+HL + old_HL + 1)
+56    F61D              odd:
+57    63005  229                                      PUSH    HL              ; save n
+58    63006   41                                      ADD     HL,HL           ; HL = 2n
+59    63007  209                                      POP     DE              ; DE = n
+60    63008   25                                      ADD     HL,DE           ; HL = 3n
+61    63009   35                                      INC     HL              ; HL = 3n + 1
+62    63010   24 229                               JR      loop
+63    F624
+64    F624              done:
+65    63012  120                                      LD      A,B             ; A = step count  (returned by CALL)
+66    63013  201                                      RET
+67    F626
+# file closed: COLLATMC.asm

@@ -1,0 +1,129 @@
+# file opened: SPRITE.asm
+  1   0000              ; SPRITE.asm - Byte-aligned sprite animation, fixed centre row
+  2   0000              ; Z80 source equivalent of gen_sprite.py
+  3   0000              ; By Kayto April 2026
+  4   0000              ;
+  5   0000              ; Assembler: compatible with Pasmo / SJASM+  (Intel-style, H-suffix hex)
+  6   0000              ;
+  7   0000              ; MC loaded at F605H (62981) by BASIC POKE loop.
+  8   0000              ; Params at F740H (63296):
+  9   0000              ;   +0     : col  (byte column, 0-29)
+ 10   0000              ;   +1..+8 : sprite pattern (8 bytes)
+ 11   0000              ;   +9,+10 : delay counter (little-endian word)
+ 12   0000
+ 13   0000              ROUTINE_BASE    EQU     0F605H
+ 14   0000              PARAM_BASE      EQU     0F740H
+ 15   0000              Y_BASE          EQU     840             ; row 28 * 30 = centre of 64-row display
+ 16   0000
+ 17   0000              col             EQU     PARAM_BASE + 0
+ 18   0000              sprite          EQU     PARAM_BASE + 1
+ 19   0000              delay_ctr       EQU     PARAM_BASE + 9  ; word, little-endian
+ 20   0000
+ 21   0000                              ORG     ROUTINE_BASE
+ 22   F605
+ 23   F605              ; -------- MAIN LOOP --------
+ 24   F605              main_loop:
+ 25   62981   58  64 247                        LD      A,(col)         ; compute VRAM addr for current col
+ 26   62984   95                                      LD      E,A             ; at fixed row 28 (Y_BASE = 840)
+ 27   62985   22   0                               LD      D,0
+ 28   62987   33  72   3                        LD      HL,Y_BASE
+ 29   62990   25                                      ADD     HL,DE           ; HL = 840 + col
+ 30   62991  235                                      EX      DE,HL           ; DE = VRAM addr
+ 31   62992    6   8                               LD      B,8
+ 32   F612
+ 33   F612              erase_loop:
+ 34   62994  197                                      PUSH    BC
+ 35   62995  205  97 246                        CALL    set_cursor
+ 36   62998  175                                      XOR     A               ; write 0 to erase
+ 37   62999  205 124 246                        CALL    write_byte
+ 38   F61A              ; DE += 30: copy DE->HL, add 30, copy back. No 16-bit ADD to DE directly on Z80.
+ 39   63002   98                                      LD      H,D             ; DE += 30  (advance one LCD row)
+ 40   63003  107                                      LD      L,E
+ 41   63004    1  30   0                        LD      BC,30
+ 42   63007    9                                      ADD     HL,BC
+ 43   63008  235                                      EX      DE,HL
+ 44   63009  193                                      POP     BC
+ 45   63010   16 238                               DJNZ    erase_loop
+ 46   F624
+ 47   63012   58  64 247                        LD      A,(col)         ; increment col, wrap at 30
+ 48   63015   60                                      INC     A
+ 49   63016  254  30                               CP      30
+ 50   63018   56   1                               JR      C,no_wrap
+ 51   63020  175                                      XOR     A               ; wrap to 0
+ 52   F62D              no_wrap:
+ 53   63021   50  64 247                        LD      (col),A
+ 54   F630
+ 55   63024   95                                      LD      E,A             ; compute VRAM addr for new col
+ 56   63025   22   0                               LD      D,0
+ 57   63027   33  72   3                        LD      HL,Y_BASE
+ 58   63030   25                                      ADD     HL,DE
+ 59   63031  235                                      EX      DE,HL           ; DE = VRAM addr
+ 60   63032   33  65 247                        LD      HL,sprite       ; HL -> sprite pattern bytes
+ 61   63035    6   8                               LD      B,8
+ 62   F63D
+ 63   F63D              draw_loop:
+ 64   63037  197                                      PUSH    BC
+ 65   63038  205  97 246                        CALL    set_cursor
+ 66   63041  126                                      LD      A,(HL)
+ 67   63042   35                                      INC     HL
+ 68   63043  205 124 246                        CALL    write_byte
+ 69   F646              ; Double-EX trick: swap sprite_ptr into DE, add 30 to HL (was VRAM), swap back.
+ 70   F646              ; Result: DE = VRAM+30, HL = sprite_ptr (both preserved).
+ 71   63046  235                                      EX      DE,HL           ; HL = VRAM addr, DE = sprite ptr
+ 72   63047    1  30   0                        LD      BC,30
+ 73   63050    9                                      ADD     HL,BC           ; HL = VRAM + 30
+ 74   63051  235                                      EX      DE,HL           ; DE = VRAM+30, HL = sprite ptr
+ 75   63052  193                                      POP     BC
+ 76   63053   16 238                               DJNZ    draw_loop
+ 77   F64F
+ 78   63055   42  73 247                        LD      HL,(delay_ctr)  ; burn cycles for frame timing
+ 79   F652              delay_loop:
+ 80   63058   43                                      DEC     HL
+ 81   63059  124                                      LD      A,H
+ 82   63060  181                                      OR      L
+ 83   63061   32 251                               JR      NZ,delay_loop
+ 84   F657
+ 85   63063   14  11                               LD      C,0BH
+ 86   63065  205   5   0                        CALL    0005H           ; BDOS fn11 - console status
+ 87   63068  167                                      AND     A
+ 88   63069  202   5 246                        JP      Z,main_loop     ; no key: keep animating
+ 89   63072  201                                      RET
+ 90   F661
+ 91   F661              ; -------- set_cursor --------
+ 92   F661              ; In:  DE = VRAM offset.  Clobbers A.  Preserves HL,DE,BC
+ 93   F661              set_cursor:
+ 94   63073  205 139 246                        CALL    wait_busy
+ 95   63076   62  10                               LD      A,0AH           ; cmd: cursor address low
+ 96   63078  211  33                               OUT     (21H),A
+ 97   63080  205 139 246                        CALL    wait_busy
+ 98   63083  123                                      LD      A,E
+ 99   63084  211  32                               OUT     (20H),A
+100   63086  205 139 246                        CALL    wait_busy
+101   63089   62  11                               LD      A,0BH           ; cmd: cursor address high
+102   63091  211  33                               OUT     (21H),A
+103   63093  205 139 246                        CALL    wait_busy
+104   63096  122                                      LD      A,D
+105   63097  211  32                               OUT     (20H),A
+106   63099  201                                      RET
+107   F67C
+108   F67C              ; -------- write_byte --------
+109   F67C              ; In:  A = byte to write.  Clobbers A.  Preserves HL,DE,BC
+110   F67C              write_byte:
+111   63100  245                                      PUSH    AF
+112   63101  205 139 246                        CALL    wait_busy
+113   63104   62  12                               LD      A,0CH           ; cmd: write display data
+114   63106  211  33                               OUT     (21H),A
+115   63108  205 139 246                        CALL    wait_busy
+116   63111  241                                      POP     AF
+117   63112  211  32                               OUT     (20H),A
+118   63114  201                                      RET
+119   F68B
+120   F68B              ; -------- wait_busy --------
+121   F68B              ; Poll HD61830 status port until not busy (bit 7 = 0)
+122   F68B              wait_busy:
+123   63115  219  33                               IN      A,(21H)         ; read status
+124   63117    7                                      RLCA                    ; bit 7 -> carry
+125   63118   56 251                               JR      C,wait_busy     ; loop while busy
+126   63120  201                                      RET
+127   F691
+# file closed: SPRITE.asm

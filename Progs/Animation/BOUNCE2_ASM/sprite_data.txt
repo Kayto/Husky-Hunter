@@ -1,0 +1,34 @@
+; sprite_data.txt - Sprite patterns for BOUNCE2.BAS
+; sprite1 (circle)  POKE 63298-63305 (PARAM_BASE+2..+9)
+; sprite2 (diamond) POKE 63306-63313 (PARAM_BASE+10..+17)
+; 8 bytes each, 1 byte per LCD row, LSB = leftmost pixel column
+;
+; addr   dec  hex   binary     visual (. = 0, # = 1, LSB left)
+;
+; sprite1 (circle):
+; 63298   60  3CH   00111100   ..####..
+; 63299  126  7EH   01111110   .######.
+; 63300  255  FFH   11111111   ########
+; 63301  255  FFH   11111111   ########
+; 63302  255  FFH   11111111   ########
+; 63303  255  FFH   11111111   ########
+; 63304  126  7EH   01111110   .######.
+; 63305   60  3CH   00111100   ..####..
+;
+; Shape: solid filled oval, 8 rows tall x 6 pixels wide at centre
+;
+; sprite2 (diamond):
+; 63306   24  18H   00011000   ...##...
+; 63307   60  3CH   00111100   ..####..
+; 63308  126  7EH   01111110   .######.
+; 63309  255  FFH   11111111   ########
+; 63310  126  7EH   01111110   .######.
+; 63311   60  3CH   00111100   ..####..
+; 63312   24  18H   00011000   ...##...
+; 63313    0  00H   00000000   ........
+;
+; Shape: diamond / rhombus, 7 active rows (last byte = 0)
+;
+; Delay counter (word, little-endian):
+; 63314  160  A0H   low byte   }  0x0FA0 = 4000 iterations
+; 63315   15  0FH   high byte  }

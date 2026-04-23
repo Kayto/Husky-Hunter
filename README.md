@@ -51,6 +51,7 @@ Tools that run on the PC to support the Hunter programs above.
 * [RS232\_REFERENCE.md](RS232_REFERENCE.md) — RS-232 serial port configuration via POKE — baud rates, parity, handshaking, and BASIC I/O commands
 * [HBA\_Format/](HBA_Format/README.md) — Tokenizer tools (`HBA_Tokenizer.exe`, `hba_tokenize.py`), file format reference, and token table
 * [HBA\_Format/TOKEN\_REFERENCE.md](HBA_Format/TOKEN_REFERENCE.md) — Reverse-engineered Hunter BASIC token byte assignments
+* [Progs/ASM\_README.md](Progs/ASM_README.md) — Z80 machine code embedded in BASIC: assembly workflow, loader patterns, calling conventions, and worked examples for all MC programs
 
 ## The Husky Hunter
 

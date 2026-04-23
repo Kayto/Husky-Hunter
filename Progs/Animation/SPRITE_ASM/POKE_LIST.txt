@@ -1,0 +1,25 @@
+; POKE_LIST.txt - Decimal byte list for SPRITE.BAS DATA lines 900-909
+; Extracted from SPRITE.dlst  (assembled with sjasmplus v1.22.0)
+; 140 bytes total, loaded at F605H (62981) via FOR I=0 TO 139:READ V:POKE 62981+I,V
+
+900 DATA  58, 64,247, 95, 22,  0, 33, 72,  3, 25,235,  6,  8,197,205
+901 DATA  97,246,175,205,124,246, 98,107,  1, 30,  0,  9,235,193, 16
+902 DATA 238, 58, 64,247, 60,254, 30, 56,  1,175, 50, 64,247, 95, 22
+903 DATA   0, 33, 72,  3, 25,235, 33, 65,247,  6,  8,197,205, 97,246
+904 DATA 126, 35,205,124,246,235,  1, 30,  0,  9,235,193, 16,238, 42
+905 DATA  73,247, 43,124,181, 32,251, 14, 11,205,  5,  0,167,202,  5
+906 DATA 246,201,205,139,246, 62, 10,211, 33,205,139,246,123,211, 32
+907 DATA 205,139,246, 62, 11,211, 33,205,139,246,122,211, 32,201,245
+908 DATA 205,139,246, 62, 12,211, 33,205,139,246,241,211, 32,201,219
+909 DATA  33,  7, 56,251,201
+
+; ---- Annotated by section ----
+;
+; DATA 900      addr 62981-62995   main_loop: erase VRAM setup (LD A,(col)...EX DE,HL, LD B,8)
+; DATA 900-901  addr 62994-63011   erase_loop: 8-row LCD erase + DE+=30 per row
+; DATA 901-902  addr 63012-63023   col increment, wrap at 30, store
+; DATA 902-904  addr 63024-63054   draw setup (new VRAM addr, LD HL,sprite) + draw_loop 8 rows
+; DATA 904-906  addr 63055-63072   delay_loop + BDOS fn11 key check + JP Z,main_loop + RET
+; DATA 906-908  addr 63073-63099   set_cursor subroutine
+; DATA 908-909  addr 63100-63114   write_byte subroutine
+; DATA 909      addr 63115-63120   wait_busy subroutine

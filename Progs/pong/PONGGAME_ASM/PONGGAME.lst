@@ -1,0 +1,374 @@
+# file opened: PONGGAME.asm
+  1   0000              ; PONGGAME.asm - Ball + net + left paddle with collision
+  2   0000              ; Z80 source equivalent of gen_ponggame.py
+  3   0000              ; By Kayto April 2026
+  4   0000              ;
+  5   0000              ; Assembler: compatible with Pasmo / SJASM+  (Intel-style, H-suffix hex)
+  6   0000              ;
+  7   0000              ; MC stored in DIM/VARPTR string array (DIM MC$(D,1), AD=VARPTR(MC$)-1).
+  8   0000              ; Assembled with base=0. All internal CALL/JP targets are offset-from-start.
+  9   0000              ; BASIC patches them to real addresses at runtime before CALL(AD).
+ 10   0000              ; EXCEPTION: CALL 0005H (BDOS) is NOT patched - 0005H is the real CP/M vector.
+ 11   0000              ;
+ 12   0000              ; Param block at F605H (62981) - fixed user code area (12 bytes):
+ 13   0000              ;   +0     : col      (byte column, 0-29)
+ 14   0000              ;   +1     : row      (pixel row, 0-60)
+ 15   0000              ;   +2     : dx       (column delta: 1 or 0FFH = -1)
+ 16   0000              ;   +3     : dy       (row delta:    1 or 0FFH = -1)
+ 17   0000              ;   +4..+7 : sprite   (4 ball pattern bytes)
+ 18   0000              ;   +8,+9  : delay    (frame delay counter, little-endian word)
+ 19   0000              ;   +10    : py       (paddle Y, pixel row, 0-52)
+ 20   0000              ;   +11    : old_py   (previous py, written by MC each frame)
+ 21   0000
+ 22   0000              PARAM_BASE      EQU     0F605H
+ 23   0000
+ 24   0000              PADDLE_HEIGHT   EQU     12      ; paddle height in pixel rows
+ 25   0000              PADDLE_SPEED    EQU     4       ; pixels per keypress
+ 26   0000              PADDLE_COL      EQU     1       ; left paddle column
+ 27   0000              MAX_PADDLE_Y    EQU     52      ; 64 - PADDLE_HEIGHT
+ 28   0000              MAX_COL         EQU     29
+ 29   0000              MAX_ROW         EQU     60
+ 30   0000              NET_COL         EQU     15      ; centre column
+ 31   0000              NET_BYTE        EQU     18H     ; centre 2 bits
+ 32   0000              PADDLE_BYTE     EQU     0FFH    ; full byte (8 pixels wide)
+ 33   0000              KEY_ESC         EQU     1BH
+ 34   0000              KEY_A           EQU     61H     ; 'a' after OR 20H (case-insensitive)
+ 35   0000              KEY_Z           EQU     7AH     ; 'z' after OR 20H
+ 36   0000
+ 37   0000              col             EQU     PARAM_BASE + 0
+ 38   0000              row             EQU     PARAM_BASE + 1
+ 39   0000              dx              EQU     PARAM_BASE + 2
+ 40   0000              dy              EQU     PARAM_BASE + 3
+ 41   0000              sprite          EQU     PARAM_BASE + 4
+ 42   0000              delay_ctr       EQU     PARAM_BASE + 8
+ 43   0000              py              EQU     PARAM_BASE + 10
+ 44   0000              old_py          EQU     PARAM_BASE + 11
+ 45   0000
+ 46   0000              ; NOTE: ORG is base=0 here for clarity.
+ 47   0000              ; At runtime BASIC adds AD (the DIM/VARPTR address) to all CALL/JP targets.
+ 48   0000                              ORG     0000H
+ 49   0000
+ 50   0000              ; ==================== INITIAL PADDLE DRAW ====================
+ 51   0000              ; Drawn once before main loop; falls straight through.
+ 52   0000 3A 0F F6                     LD      A,(py)
+ 53   0003 0E 01                        LD      C,PADDLE_COL
+ 54   0005 CD 80 01                     CALL    calc_vram       ; DE = VRAM addr for top of paddle
+ 55   0008 06 0C                        LD      B,PADDLE_HEIGHT
+ 56   000A CD 68 01                     CALL    draw_rows       ; write 0FFH to B rows
+ 57   000D
+ 58   000D              ; ==================== MAIN LOOP ====================
+ 59   000D              main_loop:
+ 60   000D 3A 0F F6                     LD      A,(py)          ; save py for differential update
+ 61   0010 32 10 F6                     LD      (old_py),A
+ 62   0013
+ 63   0013              ; -------- KEY CHECK (non-blocking BDOS fn 11) --------
+ 64   0013 0E 0B                        LD      C,0BH
+ 65   0015 CD 05 00                     CALL    0005H           ; BDOS fn11: console status
+ 66   0018 A7                           AND     A
+ 67   0019 28 30                        JR      Z,no_key        ; no key pending
+ 68   001B
+ 69   001B              ; -------- READ KEY (BDOS fn 6, direct I/O) --------
+ 70   001B 0E 06                        LD      C,06H
+ 71   001D 1E FF                        LD      E,0FFH
+ 72   001F CD 05 00                     CALL    0005H           ; A = key char
+ 73   0022
+ 74   0022 FE 1B                        CP      KEY_ESC
+ 75   0024 20 01                        JR      NZ,not_esc
+ 76   0026 C9                           RET                     ; ESC: return to BASIC
+ 77   0027
+ 78   0027              not_esc:
+ 79   0027 F6 20                        OR      20H             ; force lowercase (case-insensitive)
+ 80   0029 FE 61                        CP      KEY_A
+ 81   002B 28 06                        JR      Z,paddle_up
+ 82   002D FE 7A                        CP      KEY_Z
+ 83   002F 28 0C                        JR      Z,paddle_down
+ 84   0031 18 18                        JR      no_key
+ 85   0033
+ 86   0033              paddle_up:
+ 87   0033 3A 0F F6                     LD      A,(py)
+ 88   0036 D6 04                        SUB     PADDLE_SPEED
+ 89   0038 30 0E                        JR      NC,paddle_store
+ 90   003A AF                           XOR     A               ; clamp to 0
+ 91   003B 18 0B                        JR      paddle_store
+ 92   003D
+ 93   003D              paddle_down:
+ 94   003D 3A 0F F6                     LD      A,(py)
+ 95   0040 C6 04                        ADD     A,PADDLE_SPEED
+ 96   0042 FE 35                        CP      MAX_PADDLE_Y+1
+ 97   0044 38 02                        JR      C,paddle_store
+ 98   0046 3E 34                        LD      A,MAX_PADDLE_Y  ; clamp to 52
+ 99   0048
+100   0048              paddle_store:
+101   0048 32 0F F6                     LD      (py),A
+102   004B
+103   004B              no_key:
+104   004B
+105   004B              ; -------- ERASE BALL --------
+106   004B              ; Restore net byte at NET_COL, zero elsewhere.
+107   004B 3A 06 F6                     LD      A,(row)
+108   004E 4F                           LD      C,A
+109   004F 3A 05 F6                     LD      A,(col)
+110   0052 47                           LD      B,A
+111   0053 79                           LD      A,C             ; A = row, C = col
+112   0054 48                           LD      C,B
+113   0055 CD 80 01                     CALL    calc_vram       ; DE = VRAM addr
+114   0058 06 04                        LD      B,4
+115   005A
+116   005A              erase_ball_loop:
+117   005A C5                           PUSH    BC
+118   005B CD 93 01                     CALL    set_cursor
+119   005E 79                           LD      A,C             ; C = col (preserved by set_cursor)
+120   005F FE 0F                        CP      NET_COL
+121   0061 20 04                        JR      NZ,erase_ball_zero
+122   0063 3E 18                        LD      A,NET_BYTE      ; restore net column
+123   0065 18 01                        JR      erase_ball_write
+124   0067              erase_ball_zero:
+125   0067 AF                           XOR     A
+126   0068              erase_ball_write:
+127   0068 CD AE 01                     CALL    write_byte
+128   006B CD 78 01                     CALL    next_row        ; DE += 30
+129   006E C1                           POP     BC
+130   006F 10 E9                        DJNZ    erase_ball_loop
+131   0071
+132   0071              ; -------- PADDLE FIX --------
+133   0071              ; If ball was on paddle column, the erase above wiped paddle pixels.
+134   0071              ; Redraw full paddle at current py before the differential update.
+135   0071 3A 05 F6                     LD      A,(col)         ; old ball column
+136   0074 FE 01                        CP      PADDLE_COL
+137   0076 20 0D                        JR      NZ,no_paddle_fix
+138   0078 3A 0F F6                     LD      A,(py)
+139   007B 0E 01                        LD      C,PADDLE_COL
+140   007D CD 80 01                     CALL    calc_vram
+141   0080 06 0C                        LD      B,PADDLE_HEIGHT
+142   0082 CD 68 01                     CALL    draw_rows
+143   0085              no_paddle_fix:
+144   0085
+145   0085              ; -------- DIFFERENTIAL PADDLE UPDATE --------
+146   0085              ; Only redraw the rows that actually changed (PADDLE_SPEED rows at each end).
+147   0085 3A 10 F6                     LD      A,(old_py)
+148   0088 47                           LD      B,A             ; B = old_py
+149   0089 3A 0F F6                     LD      A,(py)
+150   008C B8                           CP      B
+151   008D 28 38                        JR      Z,skip_paddle   ; py unchanged
+152   008F 38 1C                        JR      C,moved_up      ; new py < old py: moved up
+153   0091
+154   0091              ; Moved down: erase PADDLE_SPEED rows at top of old, draw at bottom of new.
+155   0091 78                           LD      A,B             ; A = old_py (top of old paddle)
+156   0092 0E 01                        LD      C,PADDLE_COL
+157   0094 CD 80 01                     CALL    calc_vram
+158   0097 06 04                        LD      B,PADDLE_SPEED
+159   0099 CD 59 01                     CALL    erase_rows
+160   009C 3A 0F F6                     LD      A,(py)
+161   009F C6 08                        ADD     A,PADDLE_HEIGHT-PADDLE_SPEED  ; bottom section start
+162   00A1 0E 01                        LD      C,PADDLE_COL
+163   00A3 CD 80 01                     CALL    calc_vram
+164   00A6 06 04                        LD      B,PADDLE_SPEED
+165   00A8 CD 68 01                     CALL    draw_rows
+166   00AB 18 1A                        JR      skip_paddle
+167   00AD
+168   00AD              moved_up:
+169   00AD              ; Moved up: erase PADDLE_SPEED rows at bottom of old, draw at top of new.
+170   00AD 78                           LD      A,B             ; B = old_py
+171   00AE C6 08                        ADD     A,PADDLE_HEIGHT-PADDLE_SPEED  ; bottom section start
+172   00B0 0E 01                        LD      C,PADDLE_COL
+173   00B2 CD 80 01                     CALL    calc_vram
+174   00B5 06 04                        LD      B,PADDLE_SPEED
+175   00B7 CD 59 01                     CALL    erase_rows
+176   00BA 3A 0F F6                     LD      A,(py)          ; new top
+177   00BD 0E 01                        LD      C,PADDLE_COL
+178   00BF CD 80 01                     CALL    calc_vram
+179   00C2 06 04                        LD      B,PADDLE_SPEED
+180   00C4 CD 68 01                     CALL    draw_rows
+181   00C7
+182   00C7              skip_paddle:
+183   00C7
+184   00C7              ; -------- UPDATE col (horizontal bounce, wall 0 and 29) --------
+185   00C7 3A 05 F6                     LD      A,(col)
+186   00CA 47                           LD      B,A
+187   00CB 3A 07 F6                     LD      A,(dx)
+188   00CE 80                           ADD     A,B             ; A = col + dx (unsigned)
+189   00CF FE 1E                        CP      MAX_COL+1
+190   00D1 38 09                        JR      C,col_ok
+191   00D3 3A 07 F6                     LD      A,(dx)
+192   00D6 ED 44                        NEG                     ; reverse direction
+193   00D8 32 07 F6                     LD      (dx),A
+194   00DB 80                           ADD     A,B             ; recompute with new dx
+195   00DC              col_ok:
+196   00DC 32 05 F6                     LD      (col),A
+197   00DF
+198   00DF              ; -------- BEEP ON MISS --------
+199   00DF              ; col == 0 means ball reached left wall (missed paddle).
+200   00DF B7                           OR      A               ; Z if col = 0
+201   00E0 20 07                        JR      NZ,no_beep
+202   00E2 0E 02                        LD      C,02H           ; BDOS fn2: console output
+203   00E4 1E 07                        LD      E,07H           ; BEL
+204   00E6 CD 05 00                     CALL    0005H
+205   00E9              no_beep:
+206   00E9
+207   00E9              ; -------- UPDATE row (vertical bounce, wall 0 and 60) --------
+208   00E9 3A 06 F6                     LD      A,(row)
+209   00EC 47                           LD      B,A
+210   00ED 3A 08 F6                     LD      A,(dy)
+211   00F0 80                           ADD     A,B
+212   00F1 FE 3D                        CP      MAX_ROW+1
+213   00F3 38 09                        JR      C,row_ok
+214   00F5 3A 08 F6                     LD      A,(dy)
+215   00F8 ED 44                        NEG
+216   00FA 32 08 F6                     LD      (dy),A
+217   00FD 80                           ADD     A,B
+218   00FE              row_ok:
+219   00FE 32 06 F6                     LD      (row),A
+220   0101
+221   0101              ; -------- PADDLE COLLISION CHECK --------
+222   0101              ; Conditions: col == PADDLE_COL, dx == -1 (moving left), row overlaps paddle.
+223   0101 3A 05 F6                     LD      A,(col)
+224   0104 FE 01                        CP      PADDLE_COL
+225   0106 20 26                        JR      NZ,no_pbounce
+226   0108 3A 07 F6                     LD      A,(dx)
+227   010B 3C                           INC     A               ; 0FFH+1=00H: only 0FFH (-1) wraps to 0
+228   010C 20 20                        JR      NZ,no_pbounce   ; dx != -1: ball moving right, skip
+229   010E
+230   010E 3A 0F F6                     LD      A,(py)
+231   0111 47                           LD      B,A             ; B = py
+232   0112 3A 06 F6                     LD      A,(row)
+233   0115 C6 03                        ADD     A,3             ; A = row+3 (ball bottom edge)
+234   0117 B8                           CP      B               ; (row+3) - py
+235   0118 38 14                        JR      C,no_pbounce    ; ball entirely above paddle
+236   011A
+237   011A 3A 0F F6                     LD      A,(py)
+238   011D C6 0C                        ADD     A,PADDLE_HEIGHT ; A = py + 12
+239   011F 47                           LD      B,A
+240   0120 3A 06 F6                     LD      A,(row)
+241   0123 B8                           CP      B               ; row - (py+12)
+242   0124 30 08                        JR      NC,no_pbounce   ; ball entirely below paddle
+243   0126
+244   0126                              ; Overlap: reverse dx
+245   0126 3A 07 F6                     LD      A,(dx)
+246   0129 ED 44                        NEG
+247   012B 32 07 F6                     LD      (dx),A
+248   012E              no_pbounce:
+249   012E
+250   012E              ; -------- DRAW BALL --------
+251   012E 3A 05 F6                     LD      A,(col)
+252   0131 4F                           LD      C,A
+253   0132 3A 06 F6                     LD      A,(row)
+254   0135 CD 80 01                     CALL    calc_vram
+255   0138 21 09 F6                     LD      HL,sprite
+256   013B 06 04                        LD      B,4
+257   013D
+258   013D              draw_ball_loop:
+259   013D C5                           PUSH    BC
+260   013E CD 93 01                     CALL    set_cursor
+261   0141 7E                           LD      A,(HL)
+262   0142 23                           INC     HL
+263   0143 CD AE 01                     CALL    write_byte
+264   0146 E5                           PUSH    HL
+265   0147 CD 78 01                     CALL    next_row        ; DE += 30
+266   014A E1                           POP     HL
+267   014B C1                           POP     BC
+268   014C 10 EF                        DJNZ    draw_ball_loop
+269   014E
+270   014E              ; -------- FRAME DELAY --------
+271   014E 2A 0D F6                     LD      HL,(delay_ctr)
+272   0151              delay_loop:
+273   0151 2B                           DEC     HL
+274   0152 7C                           LD      A,H
+275   0153 B5                           OR      L
+276   0154 20 FB                        JR      NZ,delay_loop
+277   0156
+278   0156 C3 0D 00                     JP      main_loop
+279   0159
+280   0159              ; ==================== SUBROUTINES ====================
+281   0159
+282   0159              ; erase_rows: write 0 to B rows starting at DE
+283   0159              ; Clobbers A,DE,BC
+284   0159              erase_rows:
+285   0159 C5                           PUSH    BC
+286   015A CD 93 01                     CALL    set_cursor
+287   015D AF                           XOR     A
+288   015E CD AE 01                     CALL    write_byte
+289   0161 CD 78 01                     CALL    next_row
+290   0164 C1                           POP     BC
+291   0165 10 F2                        DJNZ    erase_rows
+292   0167 C9                           RET
+293   0168
+294   0168              ; draw_rows: write 0FFH to B rows starting at DE
+295   0168              ; Clobbers A,DE,BC
+296   0168              draw_rows:
+297   0168 C5                           PUSH    BC
+298   0169 CD 93 01                     CALL    set_cursor
+299   016C 3E FF                        LD      A,PADDLE_BYTE
+300   016E CD AE 01                     CALL    write_byte
+301   0171 CD 78 01                     CALL    next_row
+302   0174 C1                           POP     BC
+303   0175 10 F1                        DJNZ    draw_rows
+304   0177 C9                           RET
+305   0178
+306   0178              ; next_row: DE += 30  (advance one LCD row)
+307   0178              ; Clobbers HL.  Preserves DE value after add.
+308   0178              next_row:
+309   0178 62                           LD      H,D
+310   0179 6B                           LD      L,E
+311   017A 11 1E 00                     LD      DE,30
+312   017D 19                           ADD     HL,DE
+313   017E EB                           EX      DE,HL
+314   017F C9                           RET
+315   0180
+316   0180              ; calc_vram: A=row, C=col -> DE = row*30 + col
+317   0180              ; row*30 = row*32 - row*2
+318   0180              ; Clobbers A,HL,DE.  Preserves B,C
+319   0180              calc_vram:
+320   0180 6F                           LD      L,A
+321   0181 26 00                        LD      H,0
+322   0183 29                           ADD     HL,HL           ; row*2
+323   0184 E5                           PUSH    HL
+324   0185 29                           ADD     HL,HL           ; row*4
+325   0186 29                           ADD     HL,HL           ; row*8
+326   0187 29                           ADD     HL,HL           ; row*16
+327   0188 29                           ADD     HL,HL           ; row*32
+328   0189 D1                           POP     DE
+329   018A B7                           OR      A               ; OR A: clears carry flag without changing A
+330   018B ED 52                        SBC     HL,DE           ; HL = row*30
+331   018D 59                           LD      E,C
+332   018E 16 00                        LD      D,0
+333   0190 19                           ADD     HL,DE
+334   0191 EB                           EX      DE,HL           ; DE = VRAM addr
+335   0192 C9                           RET
+336   0193
+337   0193              ; set_cursor: DE = VRAM offset -> set HD61830 cursor position
+338   0193              ; Clobbers A.  Preserves HL,DE,BC
+339   0193              set_cursor:
+340   0193 CD BD 01                     CALL    wait_busy
+341   0196 3E 0A                        LD      A,0AH           ; cmd: cursor address low
+342   0198 D3 21                        OUT     (21H),A
+343   019A CD BD 01                     CALL    wait_busy
+344   019D 7B                           LD      A,E
+345   019E D3 20                        OUT     (20H),A
+346   01A0 CD BD 01                     CALL    wait_busy
+347   01A3 3E 0B                        LD      A,0BH           ; cmd: cursor address high
+348   01A5 D3 21                        OUT     (21H),A
+349   01A7 CD BD 01                     CALL    wait_busy
+350   01AA 7A                           LD      A,D
+351   01AB D3 20                        OUT     (20H),A
+352   01AD C9                           RET
+353   01AE
+354   01AE              ; write_byte: A = byte -> write to HD61830 VRAM
+355   01AE              ; Clobbers A.  Preserves HL,DE,BC
+356   01AE              write_byte:
+357   01AE F5                           PUSH    AF
+358   01AF CD BD 01                     CALL    wait_busy
+359   01B2 3E 0C                        LD      A,0CH           ; cmd: write display data
+360   01B4 D3 21                        OUT     (21H),A
+361   01B6 CD BD 01                     CALL    wait_busy
+362   01B9 F1                           POP     AF
+363   01BA D3 20                        OUT     (20H),A
+364   01BC C9                           RET
+365   01BD
+366   01BD              ; wait_busy: poll HD61830 status until not busy (bit 7 = 0)
+367   01BD              wait_busy:
+368   01BD DB 21                        IN      A,(21H)
+369   01BF 07                           RLCA
+370   01C0 38 FB                        JR      C,wait_busy
+371   01C2 C9                           RET
+372   01C3
+# file closed: PONGGAME.asm

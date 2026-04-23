@@ -1,0 +1,41 @@
+; POKE_LIST.txt - Decimal byte list for BOUNCE2.BAS DATA lines 900-914, 920-922
+; Extracted from BOUNCE2.dlst  (assembled with sjasmplus v1.22.0)
+; 242 bytes total (212 MC + 30 wave table), loaded at F605H (62981)
+; via FOR I=0 TO 241:READ V:POKE 62981+I,V
+;
+; MC section (212 bytes): DATA 900-914  addr 62981-63192
+; Wave table  (30 bytes): DATA 920-922  addr 63193-63222
+
+900 DATA  58, 64,247,205,117,246, 58, 65,247,205,117,246, 58, 64,247
+901 DATA  60,254, 30, 56,  1,175, 50, 64,247, 58, 65,247,214,  1, 48
+902 DATA   2, 62, 29, 50, 65,247, 58, 64,247,205,141,246, 33, 66,247
+903 DATA   6,  8,197,205,169,246,126, 35,205,196,246,235,  1, 30,  0
+904 DATA   9,235,193, 16,238, 58, 65,247,205,141,246, 33, 74,247,  6
+905 DATA   8,197,205,169,246,126, 35,205,196,246,235,  1, 30,  0,  9
+906 DATA 235,193, 16,238, 42, 82,247, 43,124,181, 32,251, 14, 11,205
+907 DATA   5,  0,167,202,  5,246,201,205,141,246,  6,  8,197,205,169
+908 DATA 246,175,205,196,246, 98,107,  1, 30,  0,  9,235,193, 16,238
+909 DATA 201, 79, 95, 22,  0, 33,217,246, 25,126,111, 38,  0, 41,229
+910 DATA  41, 41, 41, 41,209,183,237, 82, 89, 22,  0, 25,235,201,205
+911 DATA 211,246, 62, 10,211, 33,205,211,246,123,211, 32,205,211,246
+912 DATA  62, 11,211, 33,205,211,246,122,211, 32,201,245,205,211,246
+913 DATA  62, 12,211, 33,205,211,246,241,211, 32,201,219, 33,  7, 56
+914 DATA 251,201
+; === Wave table: sine row per col 0-29. Regenerate via gen_bounce2.py ===
+920 DATA  28, 32, 36, 39, 42, 45, 47, 47, 47, 47
+921 DATA  45, 42, 39, 36, 32, 28, 23, 19, 16, 13
+922 DATA  10,  8,  8,  8,  8, 10, 13, 16, 19, 23
+
+; ---- Annotated by section ----
+;
+; DATA 900-903  addr 62981-63016   main_loop: erase both sprites + advance col1 right + col2 left
+; DATA 903-906  addr 63017-63074   draw sprite1 + draw sprite2 (calc_vram + 8-row draw_loop each)
+; DATA 906-907  addr 63075-63092   delay_loop + BDOS fn11 key check + JP Z,main_loop + RET
+; DATA 907-909  addr 63093-63116   erase_at subroutine (calc_vram + 8-row erase_loop)
+; DATA 909-910  addr 63117-63144   calc_vram: wave_table[col]*30 + col (shift-and-subtract)
+; DATA 910-912  addr 63145-63171   set_cursor subroutine
+; DATA 912-913  addr 63172-63186   write_byte subroutine
+; DATA 913-914  addr 63187-63192   wait_busy subroutine
+; DATA 920      addr 63193-63202   wave_table cols  0- 9
+; DATA 921      addr 63203-63212   wave_table cols 10-19
+; DATA 922      addr 63213-63222   wave_table cols 20-29

@@ -1,0 +1,31 @@
+; POKE_LIST.txt - Decimal byte list for PONG.BAS DATA lines 900-913
+; Extracted from PONG.dlst  (assembled with sjasmplus v1.22.0)
+; 199 bytes total, loaded at F605H (62981) via FOR I=0 TO 198:READ V:POKE 62981+I,V
+
+900 DATA  58, 65,247, 79, 58, 64,247, 71,121, 72,205,137,246,  6,  4
+901 DATA 197,205,156,246,175,205,183,246, 98,107,  1, 30,  0,  9,235
+902 DATA 193, 16,238, 58, 64,247, 71, 58, 66,247,128,254, 30, 56,  9
+903 DATA  58, 66,247,237, 68, 50, 66,247,128, 50, 64,247, 58, 65,247
+904 DATA  71, 58, 67,247,128,254, 61, 56,  9, 58, 67,247,237, 68, 50
+905 DATA  67,247,128, 50, 65,247, 58, 64,247, 79, 58, 65,247,205,137
+906 DATA 246, 33, 68,247,  6,  4,197,205,156,246,126, 35,205,183,246
+907 DATA 235,  1, 30,  0,  9,235,193, 16,238, 42, 72,247, 43,124,181
+908 DATA  32,251, 14, 11,205,  5,  0,167,202,  5,246,201,111, 38,  0
+909 DATA  41,229, 41, 41, 41, 41,209,183,237, 82, 89, 22,  0, 25,235
+910 DATA 201,205,198,246, 62, 10,211, 33,205,198,246,123,211, 32,205
+911 DATA 198,246, 62, 11,211, 33,205,198,246,122,211, 32,201,245,205
+912 DATA 198,246, 62, 12,211, 33,205,198,246,241,211, 32,201,219, 33
+913 DATA   7, 56,251,201
+
+; ---- Annotated by section ----
+;
+; DATA 900      addr 62981-62995   main_loop: load row+col, CALL calc_vram, LD B,4
+; DATA 900-902  addr 62996-63013   erase_loop: 4-row LCD erase + DE+=30 per row
+; DATA 902-905  addr 63014-63059   col bounce (add dx, NEG on overflow, recompute)
+;                                  row bounce (same pattern)
+; DATA 905-907  addr 63062-63094   draw setup + draw_loop: 4 rows
+; DATA 907-908  addr 63095-63112   delay_loop + BDOS fn11 key check + JP Z,main_loop + RET
+; DATA 908-910  addr 63113-63131   calc_vram: row*30 = row*32 - row*2 (shifts + SBC)
+; DATA 910-911  addr 63132-63158   set_cursor subroutine
+; DATA 911-912  addr 63159-63173   write_byte subroutine
+; DATA 912-913  addr 63174-63179   wait_busy subroutine

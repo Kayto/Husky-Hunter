@@ -1,0 +1,129 @@
+# file opened: SPRITE.asm
+  1   0000              ; SPRITE.asm - Byte-aligned sprite animation, fixed centre row
+  2   0000              ; Z80 source equivalent of gen_sprite.py
+  3   0000              ; By Kayto April 2026
+  4   0000              ;
+  5   0000              ; Assembler: compatible with Pasmo / SJASM+  (Intel-style, H-suffix hex)
+  6   0000              ;
+  7   0000              ; MC loaded at F605H (62981) by BASIC POKE loop.
+  8   0000              ; Params at F740H (63296):
+  9   0000              ;   +0     : col  (byte column, 0-29)
+ 10   0000              ;   +1..+8 : sprite pattern (8 bytes)
+ 11   0000              ;   +9,+10 : delay counter (little-endian word)
+ 12   0000
+ 13   0000              ROUTINE_BASE    EQU     0F605H
+ 14   0000              PARAM_BASE      EQU     0F740H
+ 15   0000              Y_BASE          EQU     840             ; row 28 * 30 = centre of 64-row display
+ 16   0000
+ 17   0000              col             EQU     PARAM_BASE + 0
+ 18   0000              sprite          EQU     PARAM_BASE + 1
+ 19   0000              delay_ctr       EQU     PARAM_BASE + 9  ; word, little-endian
+ 20   0000
+ 21   0000                              ORG     ROUTINE_BASE
+ 22   F605
+ 23   F605              ; -------- MAIN LOOP --------
+ 24   F605              main_loop:
+ 25   F605 3A 40 F7                     LD      A,(col)         ; compute VRAM addr for current col
+ 26   F608 5F                           LD      E,A             ; at fixed row 28 (Y_BASE = 840)
+ 27   F609 16 00                        LD      D,0
+ 28   F60B 21 48 03                     LD      HL,Y_BASE
+ 29   F60E 19                           ADD     HL,DE           ; HL = 840 + col
+ 30   F60F EB                           EX      DE,HL           ; DE = VRAM addr
+ 31   F610 06 08                        LD      B,8
+ 32   F612
+ 33   F612              erase_loop:
+ 34   F612 C5                           PUSH    BC
+ 35   F613 CD 61 F6                     CALL    set_cursor
+ 36   F616 AF                           XOR     A               ; write 0 to erase
+ 37   F617 CD 7C F6                     CALL    write_byte
+ 38   F61A              ; DE += 30: copy DE->HL, add 30, copy back. No 16-bit ADD to DE directly on Z80.
+ 39   F61A 62                           LD      H,D             ; DE += 30  (advance one LCD row)
+ 40   F61B 6B                           LD      L,E
+ 41   F61C 01 1E 00                     LD      BC,30
+ 42   F61F 09                           ADD     HL,BC
+ 43   F620 EB                           EX      DE,HL
+ 44   F621 C1                           POP     BC
+ 45   F622 10 EE                        DJNZ    erase_loop
+ 46   F624
+ 47   F624 3A 40 F7                     LD      A,(col)         ; increment col, wrap at 30
+ 48   F627 3C                           INC     A
+ 49   F628 FE 1E                        CP      30
+ 50   F62A 38 01                        JR      C,no_wrap
+ 51   F62C AF                           XOR     A               ; wrap to 0
+ 52   F62D              no_wrap:
+ 53   F62D 32 40 F7                     LD      (col),A
+ 54   F630
+ 55   F630 5F                           LD      E,A             ; compute VRAM addr for new col
+ 56   F631 16 00                        LD      D,0
+ 57   F633 21 48 03                     LD      HL,Y_BASE
+ 58   F636 19                           ADD     HL,DE
+ 59   F637 EB                           EX      DE,HL           ; DE = VRAM addr
+ 60   F638 21 41 F7                     LD      HL,sprite       ; HL -> sprite pattern bytes
+ 61   F63B 06 08                        LD      B,8
+ 62   F63D
+ 63   F63D              draw_loop:
+ 64   F63D C5                           PUSH    BC
+ 65   F63E CD 61 F6                     CALL    set_cursor
+ 66   F641 7E                           LD      A,(HL)
+ 67   F642 23                           INC     HL
+ 68   F643 CD 7C F6                     CALL    write_byte
+ 69   F646              ; Double-EX trick: swap sprite_ptr into DE, add 30 to HL (was VRAM), swap back.
+ 70   F646              ; Result: DE = VRAM+30, HL = sprite_ptr (both preserved).
+ 71   F646 EB                           EX      DE,HL           ; HL = VRAM addr, DE = sprite ptr
+ 72   F647 01 1E 00                     LD      BC,30
+ 73   F64A 09                           ADD     HL,BC           ; HL = VRAM + 30
+ 74   F64B EB                           EX      DE,HL           ; DE = VRAM+30, HL = sprite ptr
+ 75   F64C C1                           POP     BC
+ 76   F64D 10 EE                        DJNZ    draw_loop
+ 77   F64F
+ 78   F64F 2A 49 F7                     LD      HL,(delay_ctr)  ; burn cycles for frame timing
+ 79   F652              delay_loop:
+ 80   F652 2B                           DEC     HL
+ 81   F653 7C                           LD      A,H
+ 82   F654 B5                           OR      L
+ 83   F655 20 FB                        JR      NZ,delay_loop
+ 84   F657
+ 85   F657 0E 0B                        LD      C,0BH
+ 86   F659 CD 05 00                     CALL    0005H           ; BDOS fn11 - console status
+ 87   F65C A7                           AND     A
+ 88   F65D CA 05 F6                     JP      Z,main_loop     ; no key: keep animating
+ 89   F660 C9                           RET
+ 90   F661
+ 91   F661              ; -------- set_cursor --------
+ 92   F661              ; In:  DE = VRAM offset.  Clobbers A.  Preserves HL,DE,BC
+ 93   F661              set_cursor:
+ 94   F661 CD 8B F6                     CALL    wait_busy
+ 95   F664 3E 0A                        LD      A,0AH           ; cmd: cursor address low
+ 96   F666 D3 21                        OUT     (21H),A
+ 97   F668 CD 8B F6                     CALL    wait_busy
+ 98   F66B 7B                           LD      A,E
+ 99   F66C D3 20                        OUT     (20H),A
+100   F66E CD 8B F6                     CALL    wait_busy
+101   F671 3E 0B                        LD      A,0BH           ; cmd: cursor address high
+102   F673 D3 21                        OUT     (21H),A
+103   F675 CD 8B F6                     CALL    wait_busy
+104   F678 7A                           LD      A,D
+105   F679 D3 20                        OUT     (20H),A
+106   F67B C9                           RET
+107   F67C
+108   F67C              ; -------- write_byte --------
+109   F67C              ; In:  A = byte to write.  Clobbers A.  Preserves HL,DE,BC
+110   F67C              write_byte:
+111   F67C F5                           PUSH    AF
+112   F67D CD 8B F6                     CALL    wait_busy
+113   F680 3E 0C                        LD      A,0CH           ; cmd: write display data
+114   F682 D3 21                        OUT     (21H),A
+115   F684 CD 8B F6                     CALL    wait_busy
+116   F687 F1                           POP     AF
+117   F688 D3 20                        OUT     (20H),A
+118   F68A C9                           RET
+119   F68B
+120   F68B              ; -------- wait_busy --------
+121   F68B              ; Poll HD61830 status port until not busy (bit 7 = 0)
+122   F68B              wait_busy:
+123   F68B DB 21                        IN      A,(21H)         ; read status
+124   F68D 07                           RLCA                    ; bit 7 -> carry
+125   F68E 38 FB                        JR      C,wait_busy     ; loop while busy
+126   F690 C9                           RET
+127   F691
+# file closed: SPRITE.asm

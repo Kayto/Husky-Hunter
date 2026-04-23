@@ -1,0 +1,38 @@
+; POKE_LIST.txt - Decimal byte list for BOUNCE.BAS DATA lines 900-922
+; Extracted from BOUNCE.dlst  (assembled with sjasmplus v1.22.0)
+; 188 bytes total, loaded at F605H (62981) via FOR I=0 TO 187:READ V:POKE 62981+I,V
+;
+; MC section (158 bytes): DATA 900-910  addr 62981-63138
+; Wave table  (30 bytes): DATA 920-922  addr 63139-63168
+
+900 DATA  58, 64,247,205, 87,246,  6,  8,197,205,115,246,175,205,142
+901 DATA 246, 98,107,  1, 30,  0,  9,235,193, 16,238, 58, 64,247, 60
+902 DATA 254, 30, 56,  1,175, 50, 64,247,205, 87,246, 33, 65,247,  6
+903 DATA   8,197,205,115,246,126, 35,205,142,246,235,  1, 30,  0,  9
+904 DATA 235,193, 16,238, 42, 73,247, 43,124,181, 32,251, 14, 11,205
+905 DATA   5,  0,167,202,  5,246,201, 79, 95, 22,  0, 33,163,246, 25
+906 DATA 126,111, 38,  0, 41,229, 41, 41, 41, 41,209,183,237, 82, 89
+907 DATA  22,  0, 25,235,201,205,157,246, 62, 10,211, 33,205,157,246
+908 DATA 123,211, 32,205,157,246, 62, 11,211, 33,205,157,246,122,211
+909 DATA  32,201,245,205,157,246, 62, 12,211, 33,205,157,246,241,211
+910 DATA  32,201,219, 33,  7, 56,251,201
+; === Wave table: sine row per col 0-29. Regenerate via gen_bounce.py ===
+920 DATA  28, 32, 36, 39, 42, 45, 47, 47, 47, 47
+921 DATA  45, 42, 39, 36, 32, 28, 23, 19, 16, 13
+922 DATA  10,  8,  8,  8,  8, 10, 13, 16, 19, 23
+
+; ---- Annotated by section ----
+;
+; DATA 900-901  addr 62981-62995   main_loop: erase sprite (LD A,(col) ... CALL write_byte)
+; DATA 901-901  addr 62996-63010   erase DE+=30 loop body + col increment
+; DATA 902-903  addr 63011-63026   col wrap + draw setup (CALL calc_vram, LD HL,sprite)
+; DATA 903-904  addr 63027-63040   draw_loop body
+; DATA 904-905  addr 63041-63057   delay loop + BDOS fn11 key check
+; DATA 905-906  addr 63058-63072   JP Z,main_loop / RET + calc_vram entry
+; DATA 906-907  addr 63073-63090   calc_vram: row*30 + col, RET
+; DATA 907-908  addr 63091-63102   set_cursor: wait_busy + cursor addr low
+; DATA 908-909  addr 63103-63117   set_cursor: cursor addr high, RET
+; DATA 909-910  addr 63118-63138   write_byte + wait_busy subroutines
+; DATA 920      addr 63139-63148   wave_table cols  0- 9
+; DATA 921      addr 63149-63158   wave_table cols 10-19
+; DATA 922      addr 63159-63168   wave_table cols 20-29

@@ -1,0 +1,19 @@
+; sprite_data.txt - Ball sprite pattern for PONGGAME.BAS
+; Ball sprite POKE 62985-62988 (PARAM_BASE+4..+7)
+; 4 bytes, 1 byte per LCD row, LSB = leftmost pixel column
+;
+; addr   dec  hex   binary     visual (. = 0, # = 1, LSB left)
+; 62985   24  18H   00011000   ...##...
+; 62986   60  3CH   00111100   ..####..
+; 62987   60  3CH   00111100   ..####..
+; 62988   24  18H   00011000   ...##...
+;
+; Shape: 4x4 diamond blob
+;
+; Delay counter (word, little-endian):
+; 62989   16  10H   low byte   }  0x2710 = 10000 iterations
+; 62990   39  27H   high byte  }
+;
+; Paddle parameters:
+; 62991   py      (paddle Y, pixel row, 0-52)  - initial value 26
+; 62992   old_py  (written by MC each frame, tracks previous paddle position)

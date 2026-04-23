@@ -1,0 +1,19 @@
+; sprite_data.txt - Sprite pattern for BOUNCE.BAS
+; Loaded via POKE 63297-63304 (PARAM_BASE+1..+8)
+; 8 bytes, 1 byte per LCD row, LSB = leftmost pixel column
+;
+; addr   dec  hex   binary     visual (. = 0, # = 1, LSB left)
+; 63297   60  3CH   00111100   ..####..
+; 63298  126  7EH   01111110   .######.
+; 63299  255  FFH   11111111   ########
+; 63300  255  FFH   11111111   ########
+; 63301  255  FFH   11111111   ########
+; 63302  255  FFH   11111111   ########
+; 63303  126  7EH   01111110   .######.
+; 63304   60  3CH   00111100   ..####..
+;
+; Shape: solid filled oval, 8 rows tall x 6 pixels wide at centre
+;
+; Delay counter (word, little-endian):
+; 63305  160  A0H   low byte  }  0x0FA0 = 4000 iterations
+; 63306   15  0FH   high byte }

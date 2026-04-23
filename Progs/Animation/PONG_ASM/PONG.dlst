@@ -1,0 +1,182 @@
+# file opened: PONG.asm
+  1   0000              ; PONG.asm - 4x4 ball bouncing off all four LCD edges, no paddle
+  2   0000              ; Z80 source equivalent of gen_pong.py
+  3   0000              ; By Kayto April 2026
+  4   0000              ;
+  5   0000              ; Assembler: compatible with Pasmo / SJASM+  (Intel-style, H-suffix hex)
+  6   0000              ;
+  7   0000              ; MC loaded at F605H (62981) by BASIC POKE loop.
+  8   0000              ; Params at F740H (63296):
+  9   0000              ;   +0     : col  (byte column, 0-29)
+ 10   0000              ;   +1     : row  (pixel row, 0-60)
+ 11   0000              ;   +2     : dx   (column delta: 1 or 0FFH = -1)
+ 12   0000              ;   +3     : dy   (row delta:    1 or 0FFH = -1)
+ 13   0000              ;   +4..+7 : sprite pattern (4 bytes, 4-row sprite)
+ 14   0000              ;   +8,+9  : delay counter (little-endian word)
+ 15   0000              ;
+ 16   0000              ; Bounce: unsigned compare (CP N+1).  When out of range, NEG reverses
+ 17   0000              ; the direction byte and the position is recomputed with the new delta.
+ 18   0000
+ 19   0000              ROUTINE_BASE    EQU     0F605H
+ 20   0000              PARAM_BASE      EQU     0F740H
+ 21   0000
+ 22   0000              MAX_COL         EQU     29              ; rightmost column (screen is 30 wide)
+ 23   0000              MAX_ROW         EQU     60              ; bottom row for 4-row sprite
+ 24   0000
+ 25   0000              col             EQU     PARAM_BASE + 0
+ 26   0000              row             EQU     PARAM_BASE + 1
+ 27   0000              dx              EQU     PARAM_BASE + 2
+ 28   0000              dy              EQU     PARAM_BASE + 3
+ 29   0000              sprite          EQU     PARAM_BASE + 4
+ 30   0000              delay_ctr       EQU     PARAM_BASE + 8  ; word, little-endian
+ 31   0000
+ 32   0000                              ORG     ROUTINE_BASE
+ 33   F605
+ 34   F605              ; -------- MAIN LOOP --------
+ 35   F605              main_loop:
+ 36   F605              ; Z80 has no LD C,(nn) - must go via A. Load both params then shuffle into place.
+ 37   62981   58  65 247                        LD      A,(row)         ; calc_vram wants: A=row, C=col
+ 38   62984   79                                      LD      C,A             ; park row in C
+ 39   62985   58  64 247                        LD      A,(col)
+ 40   62988   71                                      LD      B,A             ; park col in B
+ 41   62989  121                                      LD      A,C             ; A = row
+ 42   62990   72                                      LD      C,B             ; C = col
+ 43   62991  205 137 246                        CALL    calc_vram       ; DE = VRAM addr
+ 44   62994    6   4                               LD      B,4
+ 45   F614
+ 46   F614              erase_loop:
+ 47   62996  197                                      PUSH    BC
+ 48   62997  205 156 246                        CALL    set_cursor
+ 49   63000  175                                      XOR     A               ; A = 0: erase pixel data
+ 50   63001  205 183 246                        CALL    write_byte
+ 51   63004   98                                      LD      H,D
+ 52   63005  107                                      LD      L,E
+ 53   63006    1  30   0                        LD      BC,30
+ 54   63009    9                                      ADD     HL,BC
+ 55   63010  235                                      EX      DE,HL
+ 56   63011  193                                      POP     BC
+ 57   63012   16 238                               DJNZ    erase_loop
+ 58   F626
+ 59   F626              ; --- UPDATE col with horizontal bounce ---
+ 60   63014   58  64 247                        LD      A,(col)
+ 61   63017   71                                      LD      B,A             ; B = old col
+ 62   63018   58  66 247                        LD      A,(dx)
+ 63   63021  128                                      ADD     A,B             ; A = col + dx
+ 64   63022  254  30                               CP      MAX_COL+1       ; unsigned: 0..MAX_COL ok
+ 65   63024   56   9                               JR      C,col_ok
+ 66   63026   58  66 247                        LD      A,(dx)
+ 67   63029  237  68                               NEG                     ; reverse direction
+ 68   63031   50  66 247                        LD      (dx),A
+ 69   63034  128                                      ADD     A,B             ; recompute with new dx
+ 70   F63B              col_ok:
+ 71   63035   50  64 247                        LD      (col),A
+ 72   F63E
+ 73   F63E              ; --- UPDATE row with vertical bounce ---
+ 74   63038   58  65 247                        LD      A,(row)
+ 75   63041   71                                      LD      B,A             ; B = old row
+ 76   63042   58  67 247                        LD      A,(dy)
+ 77   63045  128                                      ADD     A,B             ; A = row + dy
+ 78   63046  254  61                               CP      MAX_ROW+1
+ 79   63048   56   9                               JR      C,row_ok
+ 80   63050   58  67 247                        LD      A,(dy)
+ 81   63053  237  68                               NEG
+ 82   63055   50  67 247                        LD      (dy),A
+ 83   63058  128                                      ADD     A,B
+ 84   F653              row_ok:
+ 85   63059   50  65 247                        LD      (row),A
+ 86   F656
+ 87   F656              ; --- DRAW at new position ---
+ 88   63062   58  64 247                        LD      A,(col)
+ 89   63065   79                                      LD      C,A             ; C = col
+ 90   63066   58  65 247                        LD      A,(row)         ; A = row
+ 91   63069  205 137 246                        CALL    calc_vram
+ 92   63072   33  68 247                        LD      HL,sprite
+ 93   63075    6   4                               LD      B,4
+ 94   F665
+ 95   F665              draw_loop:
+ 96   63077  197                                      PUSH    BC
+ 97   63078  205 156 246                        CALL    set_cursor
+ 98   63081  126                                      LD      A,(HL)
+ 99   63082   35                                      INC     HL
+100   63083  205 183 246                        CALL    write_byte
+101   63086  235                                      EX      DE,HL
+102   63087    1  30   0                        LD      BC,30
+103   63090    9                                      ADD     HL,BC
+104   63091  235                                      EX      DE,HL
+105   63092  193                                      POP     BC
+106   63093   16 238                               DJNZ    draw_loop
+107   F677
+108   63095   42  72 247                        LD      HL,(delay_ctr)
+109   F67A              delay_loop:
+110   63098   43                                      DEC     HL
+111   63099  124                                      LD      A,H
+112   63100  181                                      OR      L
+113   63101   32 251                               JR      NZ,delay_loop
+114   F67F
+115   63103   14  11                               LD      C,0BH
+116   63105  205   5   0                        CALL    0005H           ; BDOS fn11 - console status
+117   63108  167                                      AND     A
+118   63109  202   5 246                        JP      Z,main_loop
+119   63112  201                                      RET
+120   F689
+121   F689              ; -------- calc_vram --------
+122   F689              ; In:  A = row (0-63), C = col (0-29)
+123   F689              ; Out: DE = row*30 + col
+124   F689              ; row*30 = row*32 - row*2  (shift-and-subtract, no MUL)
+125   F689              ; Clobbers A,HL,DE.  Preserves B,C
+126   F689              calc_vram:
+127   63113  111                                      LD      L,A
+128   63114   38   0                               LD      H,0             ; HL = row
+129   63116   41                                      ADD     HL,HL           ; row*2
+130   63117  229                                      PUSH    HL              ; save row*2
+131   63118   41                                      ADD     HL,HL           ; row*4
+132   63119   41                                      ADD     HL,HL           ; row*8
+133   63120   41                                      ADD     HL,HL           ; row*16
+134   63121   41                                      ADD     HL,HL           ; row*32
+135   63122  209                                      POP     DE              ; DE = row*2
+136   63123  183                                      OR      A               ; OR A: clears carry flag without changing A
+137   63124  237  82                               SBC     HL,DE           ; HL = row*30
+138   63126   89                                      LD      E,C             ; E = col
+139   63127   22   0                               LD      D,0
+140   63129   25                                      ADD     HL,DE           ; HL = row*30 + col
+141   63130  235                                      EX      DE,HL           ; DE = VRAM addr
+142   63131  201                                      RET
+143   F69C
+144   F69C              ; -------- set_cursor --------
+145   F69C              ; In:  DE = VRAM offset.  Clobbers A.  Preserves HL,DE,BC
+146   F69C              set_cursor:
+147   63132  205 198 246                        CALL    wait_busy
+148   63135   62  10                               LD      A,0AH           ; cmd: cursor address low
+149   63137  211  33                               OUT     (21H),A
+150   63139  205 198 246                        CALL    wait_busy
+151   63142  123                                      LD      A,E
+152   63143  211  32                               OUT     (20H),A
+153   63145  205 198 246                        CALL    wait_busy
+154   63148   62  11                               LD      A,0BH           ; cmd: cursor address high
+155   63150  211  33                               OUT     (21H),A
+156   63152  205 198 246                        CALL    wait_busy
+157   63155  122                                      LD      A,D
+158   63156  211  32                               OUT     (20H),A
+159   63158  201                                      RET
+160   F6B7
+161   F6B7              ; -------- write_byte --------
+162   F6B7              ; In:  A = byte to write.  Clobbers A.  Preserves HL,DE,BC
+163   F6B7              write_byte:
+164   63159  245                                      PUSH    AF
+165   63160  205 198 246                        CALL    wait_busy
+166   63163   62  12                               LD      A,0CH           ; cmd: write display data
+167   63165  211  33                               OUT     (21H),A
+168   63167  205 198 246                        CALL    wait_busy
+169   63170  241                                      POP     AF
+170   63171  211  32                               OUT     (20H),A
+171   63173  201                                      RET
+172   F6C6
+173   F6C6              ; -------- wait_busy --------
+174   F6C6              ; Poll HD61830 status port until not busy (bit 7 = 0)
+175   F6C6              wait_busy:
+176   63174  219  33                               IN      A,(21H)
+177   63176    7                                      RLCA
+178   63177   56 251                               JR      C,wait_busy
+179   63179  201                                      RET
+180   F6CC
+# file closed: PONG.asm

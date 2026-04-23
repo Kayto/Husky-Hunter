@@ -1,0 +1,33 @@
+; POKE_LIST.txt - Decimal byte list for IMGMC.BAS line 900
+; Extracted from IMGMC.dlst  (assembled with sjasmplus v1.22.0)
+; 30 bytes total, loaded at F605H (62981)
+;
+; Loaded by BASIC: FOR I=0 TO 29:READ V:POKE 62981+I,V:NEXT I
+
+POKE 62981, 33,  0,192, 17,128,  7,219, 33,  7, 56,251, 62, 12,211, 33,219, 33,  7, 56,251,126,211, 32, 35, 27,122,179, 32,233,201
+
+; ---- Annotated by instruction ----
+;
+; addr  bytes              mnemonic
+; 62981  33   0 192        LD      HL,C000H        ; source: image buffer
+; 62984  17 128   7        LD      DE,0780H        ; byte count: 1920
+;
+; blast_loop:
+; busy1:
+; 62987 219  33            IN      A,(21H)         ; poll HD61830 status: bit 7 = busy
+; 62989   7                RLCA
+; 62990  56 251            JR      C,busy1         ; loop while busy (offset -5)
+; 62992  62  12            LD      A,0CH           ; cmd: write display data
+; 62994 211  33            OUT     (21H),A
+; busy2:
+; 62996 219  33            IN      A,(21H)         ; poll again before data write
+; 62998   7                RLCA
+; 62999  56 251            JR      C,busy2         ; loop while busy (offset -5)
+; 63001 126                LD      A,(HL)          ; next byte from buffer
+; 63002 211  32            OUT     (20H),A
+; 63004  35                INC     HL
+; 63005  27                DEC     DE
+; 63006 122                LD      A,D
+; 63007 179                OR      E
+; 63008  32 233            JR      NZ,blast_loop   ; loop until DE = 0  (offset -23)
+; 63010 201                RET

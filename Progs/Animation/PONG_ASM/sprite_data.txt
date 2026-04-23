@@ -1,0 +1,15 @@
+; sprite_data.txt - Sprite pattern for PONG.BAS
+; Loaded via POKE 63300-63303 (PARAM_BASE+4..+7)
+; 4 bytes, 1 byte per LCD row, LSB = leftmost pixel column
+;
+; addr   dec  hex   binary     visual (. = 0, # = 1, LSB left)
+; 63300   24  18H   00011000   ...##...
+; 63301   60  3CH   00111100   ..####..
+; 63302   60  3CH   00111100   ..####..
+; 63303   24  18H   00011000   ...##...
+;
+; Shape: 4x4 diamond / blob
+;
+; Delay counter (word, little-endian):
+; 63304  208  D0H   low byte   }  0x07D0 = 2000 iterations
+; 63305    7  07H   high byte  }

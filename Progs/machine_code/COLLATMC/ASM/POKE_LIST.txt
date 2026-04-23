@@ -1,0 +1,36 @@
+; POKE_LIST.txt - Decimal byte list for COLLATMC.BAS lines 32/34/36
+; Extracted from COLLATMC.dlst  (assembled with sjasmplus v1.22.0)
+; 33 bytes total, loaded at F605H (62981)
+;
+; Grouped to match existing POKE line boundaries in BAS (11 bytes each)
+
+POKE 62981, 99,105,  6,  0,124,183, 32,  5,125,254,  1
+POKE 62992, 40, 18,  4,203, 69, 32,  6,203, 60,203, 29
+POKE 63003, 24,236,229, 41,209, 25, 35, 24,229,120,201
+
+; ---- Annotated by instruction ----
+;
+; addr  bytes              mnemonic
+; 62981  99               LD H,E
+; 62982 105               LD L,C
+; 62983   6  0            LD B,0
+; 62985 124               LD A,H
+; 62986 183               OR A
+; 62987  32  5            JR NZ,step
+; 62989 125               LD A,L
+; 62990 254  1            CP 1
+; 62992  40 18            JR Z,done
+; 62994   4               INC B
+; 62995 203 69            BIT 0,L
+; 62997  32  6            JR NZ,odd
+; 62999 203 60            SRL H
+; 63001 203 29            RR L
+; 63003  24 236           JR loop        (offset -20)
+; 63005 229               PUSH HL
+; 63006  41               ADD HL,HL
+; 63007 209               POP DE
+; 63008  25               ADD HL,DE
+; 63009  35               INC HL
+; 63010  24 229           JR loop        (offset -27)
+; 63012 120               LD A,B
+; 63013 201               RET

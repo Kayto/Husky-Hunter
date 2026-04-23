@@ -1,0 +1,198 @@
+# file opened: BOUNCE2.asm
+  1   0000              ; BOUNCE2.asm - Two-sprite wave animation, sprites moving in opposite directions
+  2   0000              ; Z80 source equivalent of gen_bounce2.py
+  3   0000              ; By Kayto April 2026
+  4   0000              ;
+  5   0000              ; Assembler: compatible with Pasmo / SJASM+  (Intel-style, H-suffix hex)
+  6   0000              ;
+  7   0000              ; MC loaded at F605H (62981) by BASIC POKE loop.
+  8   0000              ; Params at F740H (63296):
+  9   0000              ;   +0      : col1  (sprite 1 column, moves right, wraps 29->0)
+ 10   0000              ;   +1      : col2  (sprite 2 column, moves left,  wraps 0->29)
+ 11   0000              ;   +2..+9  : sprite1 pattern (8 bytes) - circle
+ 12   0000              ;   +10..+17: sprite2 pattern (8 bytes) - diamond
+ 13   0000              ;   +18,+19 : delay counter (little-endian word)
+ 14   0000              ;
+ 15   0000              ; wave_table: same sine table as BOUNCE, shared by both sprites.
+ 16   0000
+ 17   0000              ROUTINE_BASE    EQU     0F605H
+ 18   0000              PARAM_BASE      EQU     0F740H
+ 19   0000
+ 20   0000              col1            EQU     PARAM_BASE + 0
+ 21   0000              col2            EQU     PARAM_BASE + 1
+ 22   0000              sprite1         EQU     PARAM_BASE + 2
+ 23   0000              sprite2         EQU     PARAM_BASE + 10
+ 24   0000              delay_ctr       EQU     PARAM_BASE + 18 ; word, little-endian
+ 25   0000
+ 26   0000                              ORG     ROUTINE_BASE
+ 27   F605
+ 28   F605              ; -------- MAIN LOOP --------
+ 29   F605              main_loop:
+ 30   F605 3A 40 F7                     LD      A,(col1)
+ 31   F608 CD 75 F6                     CALL    erase_at        ; erase sprite 1 at old col1
+ 32   F60B 3A 41 F7                     LD      A,(col2)
+ 33   F60E CD 75 F6                     CALL    erase_at        ; erase sprite 2 at old col2
+ 34   F611
+ 35   F611 3A 40 F7                     LD      A,(col1)        ; advance col1 right, wrap 29->0
+ 36   F614 3C                           INC     A
+ 37   F615 FE 1E                        CP      30
+ 38   F617 38 01                        JR      C,no_wrap1
+ 39   F619 AF                           XOR     A
+ 40   F61A              no_wrap1:
+ 41   F61A 32 40 F7                     LD      (col1),A        ; LD (nn),A preserves A
+ 42   F61D
+ 43   F61D 3A 41 F7                     LD      A,(col2)        ; advance col2 left, wrap 0->29
+ 44   F620 D6 01                        SUB     1               ; carry set if was 0
+ 45   F622 30 02                        JR      NC,no_wrap2
+ 46   F624 3E 1D                        LD      A,29
+ 47   F626              no_wrap2:
+ 48   F626 32 41 F7                     LD      (col2),A
+ 49   F629
+ 50   F629 3A 40 F7                     LD      A,(col1)        ; draw sprite 1 at new col1
+ 51   F62C CD 8D F6                     CALL    calc_vram       ; DE = VRAM addr
+ 52   F62F 21 42 F7                     LD      HL,sprite1
+ 53   F632 06 08                        LD      B,8
+ 54   F634
+ 55   F634              draw1_loop:
+ 56   F634 C5                           PUSH    BC
+ 57   F635 CD A9 F6                     CALL    set_cursor
+ 58   F638 7E                           LD      A,(HL)
+ 59   F639 23                           INC     HL
+ 60   F63A CD C4 F6                     CALL    write_byte
+ 61   F63D EB                           EX      DE,HL
+ 62   F63E 01 1E 00                     LD      BC,30
+ 63   F641 09                           ADD     HL,BC
+ 64   F642 EB                           EX      DE,HL
+ 65   F643 C1                           POP     BC
+ 66   F644 10 EE                        DJNZ    draw1_loop
+ 67   F646
+ 68   F646 3A 41 F7                     LD      A,(col2)        ; draw sprite 2 at new col2
+ 69   F649 CD 8D F6                     CALL    calc_vram
+ 70   F64C 21 4A F7                     LD      HL,sprite2
+ 71   F64F 06 08                        LD      B,8
+ 72   F651
+ 73   F651              draw2_loop:
+ 74   F651 C5                           PUSH    BC
+ 75   F652 CD A9 F6                     CALL    set_cursor
+ 76   F655 7E                           LD      A,(HL)
+ 77   F656 23                           INC     HL
+ 78   F657 CD C4 F6                     CALL    write_byte
+ 79   F65A EB                           EX      DE,HL
+ 80   F65B 01 1E 00                     LD      BC,30
+ 81   F65E 09                           ADD     HL,BC
+ 82   F65F EB                           EX      DE,HL
+ 83   F660 C1                           POP     BC
+ 84   F661 10 EE                        DJNZ    draw2_loop
+ 85   F663
+ 86   F663 2A 52 F7                     LD      HL,(delay_ctr)
+ 87   F666              delay_loop:
+ 88   F666 2B                           DEC     HL
+ 89   F667 7C                           LD      A,H
+ 90   F668 B5                           OR      L
+ 91   F669 20 FB                        JR      NZ,delay_loop
+ 92   F66B
+ 93   F66B 0E 0B                        LD      C,0BH
+ 94   F66D CD 05 00                     CALL    0005H           ; BDOS fn11 - console status
+ 95   F670 A7                           AND     A
+ 96   F671 CA 05 F6                     JP      Z,main_loop
+ 97   F674 C9                           RET
+ 98   F675
+ 99   F675              ; -------- erase_at --------
+100   F675              ; Erase 8 rows of sprite at column A on the wave curve.
+101   F675              ; In:  A = column (0-29).  Clobbers A,HL,DE,BC
+102   F675              erase_at:
+103   F675 CD 8D F6                     CALL    calc_vram       ; DE = VRAM addr
+104   F678 06 08                        LD      B,8
+105   F67A
+106   F67A              erase_loop:
+107   F67A C5                           PUSH    BC
+108   F67B CD A9 F6                     CALL    set_cursor
+109   F67E AF                           XOR     A
+110   F67F CD C4 F6                     CALL    write_byte
+111   F682 62                           LD      H,D
+112   F683 6B                           LD      L,E
+113   F684 01 1E 00                     LD      BC,30
+114   F687 09                           ADD     HL,BC
+115   F688 EB                           EX      DE,HL
+116   F689 C1                           POP     BC
+117   F68A 10 EE                        DJNZ    erase_loop
+118   F68C C9                           RET
+119   F68D
+120   F68D              ; -------- calc_vram --------
+121   F68D              ; In:  A = col (0-29)
+122   F68D              ; Out: DE = wave_table[col]*30 + col
+123   F68D              ; Clobbers A,HL,DE,C.  Preserves B
+124   F68D              calc_vram:
+125   F68D 4F                           LD      C,A             ; save col
+126   F68E 5F                           LD      E,A
+127   F68F 16 00                        LD      D,0
+128   F691 21 D9 F6                     LD      HL,wave_table
+129   F694 19                           ADD     HL,DE           ; HL -> wave_table[col]
+130   F695 7E                           LD      A,(HL)          ; A = row
+131   F696 6F                           LD      L,A
+132   F697 26 00                        LD      H,0             ; row*30 = row*32 - row*2
+133   F699 29                           ADD     HL,HL           ; *2
+134   F69A E5                           PUSH    HL
+135   F69B 29                           ADD     HL,HL           ; *4
+136   F69C 29                           ADD     HL,HL           ; *8
+137   F69D 29                           ADD     HL,HL           ; *16
+138   F69E 29                           ADD     HL,HL           ; *32
+139   F69F D1                           POP     DE
+140   F6A0 B7                           OR      A               ; OR A: clears carry flag without changing A
+141   F6A1 ED 52                        SBC     HL,DE           ; HL = row*30
+142   F6A3 59                           LD      E,C
+143   F6A4 16 00                        LD      D,0
+144   F6A6 19                           ADD     HL,DE
+145   F6A7 EB                           EX      DE,HL           ; DE = VRAM addr
+146   F6A8 C9                           RET
+147   F6A9
+148   F6A9              ; -------- set_cursor --------
+149   F6A9              ; In:  DE = VRAM offset.  Clobbers A.  Preserves HL,DE,BC
+150   F6A9              set_cursor:
+151   F6A9 CD D3 F6                     CALL    wait_busy
+152   F6AC 3E 0A                        LD      A,0AH           ; cmd: cursor address low
+153   F6AE D3 21                        OUT     (21H),A
+154   F6B0 CD D3 F6                     CALL    wait_busy
+155   F6B3 7B                           LD      A,E
+156   F6B4 D3 20                        OUT     (20H),A
+157   F6B6 CD D3 F6                     CALL    wait_busy
+158   F6B9 3E 0B                        LD      A,0BH           ; cmd: cursor address high
+159   F6BB D3 21                        OUT     (21H),A
+160   F6BD CD D3 F6                     CALL    wait_busy
+161   F6C0 7A                           LD      A,D
+162   F6C1 D3 20                        OUT     (20H),A
+163   F6C3 C9                           RET
+164   F6C4
+165   F6C4              ; -------- write_byte --------
+166   F6C4              ; In:  A = byte to write.  Clobbers A.  Preserves HL,DE,BC
+167   F6C4              write_byte:
+168   F6C4 F5                           PUSH    AF
+169   F6C5 CD D3 F6                     CALL    wait_busy
+170   F6C8 3E 0C                        LD      A,0CH           ; cmd: write display data
+171   F6CA D3 21                        OUT     (21H),A
+172   F6CC CD D3 F6                     CALL    wait_busy
+173   F6CF F1                           POP     AF
+174   F6D0 D3 20                        OUT     (20H),A
+175   F6D2 C9                           RET
+176   F6D3
+177   F6D3              ; -------- wait_busy --------
+178   F6D3              wait_busy:
+179   F6D3 DB 21                        IN      A,(21H)
+180   F6D5 07                           RLCA
+181   F6D6 38 FB                        JR      C,wait_busy
+182   F6D8 C9                           RET
+183   F6D9
+184   F6D9              ; -------- wave_table (30 bytes) --------
+185   F6D9              ; Sine-derived Y row per column.  Regenerate via gen_bounce2.py.
+186   F6D9              wave_table:
+187   F6D9 1C 20 24 27                  DB      28,32,36,39,42,45,47,47,47,47  ; cols  0- 9
+187   F6DD 2A 2D 2F 2F
+187   F6E1 2F 2F
+188   F6E3 2D 2A 27 24                  DB      45,42,39,36,32,28,23,19,16,13  ; cols 10-19
+188   F6E7 20 1C 17 13
+188   F6EB 10 0D
+189   F6ED 0A 08 08 08                  DB      10, 8, 8, 8, 8,10,13,16,19,23  ; cols 20-29
+189   F6F1 08 0A 0D 10
+189   F6F5 13 17
+190   F6F7
+# file closed: BOUNCE2.asm

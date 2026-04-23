@@ -1,5 +1,7 @@
 # Development folder (local dev work, not for release)
 Dev/*
+!Dev/asm_tools/
+Dev/asm_tools/make_asm_listings.py
 !Dev/elta/
 Dev/elta/*.jpg
 Dev/elta/*.pdf
@@ -8,6 +10,13 @@ Dev/elta/elta_sim.py
 Dev/elta/ELTA2.BAS
 Dev/elta/ELTAC.BAS
 Dev/elta/ELTAC.HBA
+
+# Z80 assembler binaries (folder tracked, contents ignored)
+Assembler/*
+!Assembler/.gitkeep
+
+# Assembled binary output
+*.bin
 
 # Virtual environment
 .venv/
