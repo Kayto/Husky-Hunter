@@ -29,6 +29,9 @@ Docs/Orig_Docs/
 Docs/Orig_ROMS/
 Docs/hunter_manual_text.txt
 
+# Sound programs (development, not for release)
+Progs/Sound/
+
 # OS Terrain source data
 Progs/Terrain/OS_Terrain/
 

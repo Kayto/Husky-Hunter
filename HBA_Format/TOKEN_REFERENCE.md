@@ -379,7 +379,7 @@ Token bytes shown where identified; `—` indicates token not yet mapped.
 | 5.19.5 | `RETURN`           | Statement      | `85`                    | Returns from subroutine |
 | 5.19.6 | `RIGHT$(`          | Function       | `CF`                    | |
 | 5.19.7 | `RND`              | Function       | `BE`                    | Produces random number; dummy arg required: `RND(0)` |
-| 5.19.8 | `RUN`              | Command        | —                       | Starts program execution — token not yet confirmed |
+| 5.19.8 | `RUN`              | Command        | `A6`                    | Starts program / loads and runs filename — confirmed from DEFEND7_hunter.HBA L70 |
 | 5.20.1 | `SAVE`             | Command        | —                       | Writes program to file |
 | 5.20.2 | `SCREEN`           | Command        | `FE 85`                 | Changes screen mode |
 | 5.20.3 | `SGN`              | Function       | `C2`                    | Returns sign of argument |

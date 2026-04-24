@@ -77,6 +77,7 @@ TOKENS = {
     "ON ERROR": b"\x9F\x94", # ON ERROR seen as 9F 94 in reference
     "SYSTEM":   b"\xAA",
     "NEW":      b"\xAB",     # inferred (still unconfirmed)
+    "RUN":      b"\xA6",     # confirmed from DEFEND7_hunter.HBA L70
     "LLOAD":    b"\xAC",     # confirmed from MISC1.HBA L9280 (was inferred as RUN)
     "LIST":     b"\xAD",     # inferred (still unconfirmed)
     "CRT":      b"\xAE",     # confirmed from MISC1.HBA L9290 (was inferred as LOAD)

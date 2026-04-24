@@ -162,9 +162,11 @@ umb=true
     $autoexec = @"
 [autoexec]
 mount c "."
+@echo off
 c:
 cd \hcomw\HCOM.DOS
-@echo off
+SET PATH=C:\hcomw\HCOM.DOS
+cd \HSYNC
 echo.
 echo  =============================================
 echo   Husky HCOM File Transfer Utility
