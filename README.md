@@ -71,6 +71,8 @@ Micro Live S02E02: https://www.youtube.com/watch?v=y1ZBr3NInow&t=739s
 ## Acknowledgements
 
 * [TheEPROM9 — Husky Hunter/Hunter 2](https://www.theeprom9.co.uk/vintage-computers/husky-computer-archive/husky-hunterhunter-2) — hardware teardowns, ROM dumps, reverse engineering efforts, demo code listings, and LCD datasheet
+* [John Elliott — Husky Hunter I/O ports](https://www.seasip.info/VintagePC/husky2.html#ioports) — I/O port map and hardware register documentation for the Husky Hunter
+* [staddle.net — HUNTER Operations Manual](https://hunter2.staddle.net/operations-manual/index.html) — online edition of the Husky Hunter 2 operations manual covering BASIC programming, file manager, communications, and appendices
 
 ## GitHub Community
 
