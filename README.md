@@ -14,7 +14,6 @@ To convert your own `.BAS` source files, use the tools in [`HBA_Format/`](HBA_Fo
 
 ![Terrain profile on Husky Hunter](Progs/images/20260320_234803.jpg)
 ![Image on Husky Hunter](Progs/images/20260321_120202~2.jpg)
-![Husky Hunter projects collage](Progs/images/collage.jpg)
 
 ## Hunter BASIC Programs
 
@@ -45,13 +44,19 @@ Tools that run on the PC to support the Hunter programs above.
 | [HBA\_Format](HBA_Format/README.md) | Tokenizer (`HBA_Tokenizer.exe`, `hba_tokenize.py`) — converts `.BAS` source to `.HBA` binary; includes file format reference and token table | Working |
 | [HuskyHCOM](HuskyHCOM/) | HCOM file transfer launcher for modern 64-bit Windows — DOSBox-based with interactive setup, auto COM port detection, and dev sync workflow | Working |
 
+## Low-Level Control — LCD and Machine Code
+
+Guides for direct hardware access and Z80 machine code embedded in BASIC. Start here if you want to write MC routines, drive the LCD directly, or understand how the example machine programs work under the hood.
+
+* [Progs/LCD\_CONTROL.md](Progs/LCD_CONTROL.md) — HD61830 LCD control reference: I/O ports, commands, VRAM layout, bit order, BASIC and MC patterns, performance table, and working examples. The starting point for any direct display work.
+* [Progs/ASM\_README.md](Progs/ASM_README.md) — Z80 machine code embedded in BASIC: assembly workflow, loader patterns, calling conventions, and a full table of all MC programs in the repo.
+
 ## Reference
 
 * [HUNTER\_BASIC\_GOTCHAS.md](HUNTER_BASIC_GOTCHAS.md) — Hunter BASIC syntax differences, reserved words, and quirks discovered during hardware testing
 * [RS232\_REFERENCE.md](RS232_REFERENCE.md) — RS-232 serial port configuration via POKE — baud rates, parity, handshaking, and BASIC I/O commands
 * [HBA\_Format/](HBA_Format/README.md) — Tokenizer tools (`HBA_Tokenizer.exe`, `hba_tokenize.py`), file format reference, and token table
 * [HBA\_Format/TOKEN\_REFERENCE.md](HBA_Format/TOKEN_REFERENCE.md) — Reverse-engineered Hunter BASIC token byte assignments
-* [Progs/ASM\_README.md](Progs/ASM_README.md) — Z80 machine code embedded in BASIC: assembly workflow, loader patterns, calling conventions, and worked examples for all MC programs
 
 ## The Husky Hunter
 
@@ -79,7 +84,6 @@ Micro Live S02E02: https://www.youtube.com/watch?v=y1ZBr3NInow&t=739s
 * [Kayto/Husky-Hunter](https://github.com/Kayto/Husky-Hunter) — Hunter BASIC programs, HBA tokenizer, HCOM launcher, and RS-232 tools for the 1983 Husky Hunter
 
 Other Husky-related projects and resources on GitHub:
-
 
 * [NicolaCowie/HCOM](https://github.com/NicolaCowie/HCOM) — original HCOM PC-to-Husky file transfer software (v1.0). Source code in C and Assembly for Hunter 1 & 2, Hawk, Hunter 16 and FS2
 * [sleepygecko/husky](https://github.com/sleepygecko/husky) — Husky Computers related information, HCOM WIN11 binaries, and Hunter 16 manual chapters

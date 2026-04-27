@@ -29,6 +29,9 @@ Docs/Orig_Docs/
 Docs/Orig_ROMS/
 Docs/hunter_manual_text.txt
 
+# Hardware datasheets (local copies, not for distribution)
+Docs/Hardware/
+
 # Sound programs (development, not for release)
 Progs/Sound/
 
@@ -63,6 +66,9 @@ Progs/image_writer/HUSKY.BAS
 
 # ROM analysis (private)
 Docs/Orig_ROMS/ROM_ANALYSIS.md
+
+# Hardware reference doc (private)
+HARDWARE_README.md
 
 # HCOM distribution files (downloaded separately)
 HuskyHCOM/hcomw/*
