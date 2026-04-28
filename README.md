@@ -31,7 +31,7 @@ Programs that run on the Hunter. Source files are in `Progs/` and `Y2K/`; pre-bu
 | [BASIC](Progs/BASIC/) | Short stand-alone programs — charset printer, Collatz sequence, Hello World graphic, system diagnostic | Working on hardware |
 | [machine\_code](Progs/machine_code/) | Machine code interface demos — Z80 routines called from Hunter BASIC via `ARG`/`CALL`; BDOS console output and Collatz BASIC-vs-MC benchmark | Working on hardware |
 | [PONGGAME](Progs/pong/) | Single-player Pong — paddle, collision, beep on miss, configurable speed. 451 bytes of Z80 MC. Is this the first game for the Husky Hunter! | Working on hardware |
-| [defendERR](Progs/DefendERR/) | Early preview of a Defender-style side-scroller (ship, stars, fire, enemies, collision, and movement variants) | Early preview |
+| [defendERR](Progs/DefendERR/) | Defender-style side-scroller (ship, scrolling stars, fire, two enemy waves, ship/shot collisions, lives + heart HUD, score, BASIC SOUND laser on fire) | Working PREVIEW (DEFEND11) |
 | [Animation](Progs/Animation/) | MC-driven sprite animations — horizontal, wave-motion, two-sprite, and Pong-style bouncing ball, all running in Z80 machine code with BASIC loader | Working on hardware |
 | [Y2K](Y2K/) | Y2K date fix — patches the ROM's hardcoded `19xx` century to `20xx` via a 12-byte COM utility or BASIC one-liner | Working on hardware |
 
