@@ -17,6 +17,7 @@ For ease of `.BAS` creation and parameter adjustment during development various 
 | `image_writer/IMGMC.asm` | `IMGMC.BAS` | 30 |
 | `machine_code/COLLATMC.asm` | `COLLATMC.BAS` | 33 |
 | `pong/PONGGAME_ASM/PONGGAME.asm` | `PONGGAME.BAS` | 451 |
+| `Sound/SND4_ASM/SND4.asm` | `SND4.BAS` | 35 |
 
 
 ## Two Loader Patterns
@@ -155,3 +156,4 @@ If you dont understand the above, take a look at the following to give some work
 | BOUNCE2 | 242 | Two sprites, shared erase_at subroutine, opposing directions; `sprite_data.txt` included | [Animation/BOUNCE2_ASM/ASM_README.md](Animation/BOUNCE2_ASM/ASM_README.md) |
 | PONG | 199 | Diagonal bounce, signed delta bytes, NEG direction reversal; `sprite_data.txt` included | [Animation/PONG_ASM/ASM_README.md](Animation/PONG_ASM/ASM_README.md) |
 | PONGGAME | 451 | DIM/VARPTR loader, runtime CALL/JP patching (33 offsets), full paddle game; `sprite_data.txt` included | [pong/PONGGAME_ASM/ASM_README.md](pong/PONGGAME_ASM/ASM_README.md) |
+| SND4 | 35 | Port 86H bit-bang sound; POKE pitch/duration params then CALL; ROM-verified, confirmed working on hardware | [Sound/SND4_ASM/ASM_README.md](Sound/SND4_ASM/ASM_README.md) |

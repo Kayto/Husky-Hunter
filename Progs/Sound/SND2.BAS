@@ -1,0 +1,51 @@
+1 REM SND2 - Tunes Demo
+2 REM Tune 1: Hunter manual example (page 298)
+3 REM Tune 2: Ode to Joy (middle C octave)
+4 REM ESC to exit at any time  By kayto April 2026
+5 KEY OFF:SCREEN 0:PRINT CHR$(1);
+10 CHAR 1
+12 PRINT "SND2: TUNES"
+14 PRINT "==========="
+20 PRINT
+22 REM === Tune 1: from Hunter manual (pg 298) ===
+24 PRINT "Tune 1: manual tune"
+26 FOR I=1 TO 20
+28 A$=INKEY$:IF A$=CHR$(27) THEN GOTO 900
+30 SOUND 52,1233/I
+32 SOUND 46,1394/I
+34 SOUND 59,1086/I
+36 SOUND 121,530/I
+38 SOUND 80,1202/I
+40 FOR J=I TO 16:NEXT J
+42 NEXT I
+50 FOR I=1 TO 800:NEXT I
+60 REM === Tune 2: Ode to Joy (middle C octave) ===
+62 REM C=121 D=107 E=95 F=90 G=80 (pitch params)
+64 REM Duration: crotchet=350 dotted=525 minim=700
+66 PRINT "Tune 2: Ode to Joy"
+70 REM --- Phrase 1: E E F G G F E D C C D E E. D D ---
+72 RESTORE
+74 FOR I=1 TO 15
+76 A$=INKEY$:IF A$=CHR$(27) THEN GOTO 900
+78 READ P,D:SOUND P,D
+80 NEXT I
+82 FOR I=1 TO 400:NEXT I
+90 REM --- Phrase 2: E E F G G F E D C C D E D. C C ---
+92 REM (data pointer already at phrase 2 after phrase 1)
+94 FOR I=1 TO 15
+96 A$=INKEY$:IF A$=CHR$(27) THEN GOTO 900
+98 READ P,D:SOUND P,D
+100 NEXT I
+110 PRINT "Done - any key"
+112 A$=INKEY$:IF A$="" THEN 112
+900 SCREEN 0:PRINT CHR$(1);:CURON:END
+200 REM Phrase 1 data: pitch,duration pairs
+201 DATA 95,350,95,350,90,350,80,350
+202 DATA 80,350,90,350,95,350,107,350
+203 DATA 121,350,121,350,107,350,95,350
+204 DATA 95,525,107,175,107,700
+210 REM Phrase 2 data: pitch,duration pairs
+211 DATA 95,350,95,350,90,350,80,350
+212 DATA 80,350,90,350,95,350,107,350
+213 DATA 121,350,121,350,107,350,95,350
+214 DATA 107,525,121,175,121,700

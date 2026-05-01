@@ -1,0 +1,80 @@
+# file opened: SND4.asm
+ 1    0000              ; SND4.asm - Port 86H bit-bang sound for Husky Hunter
+ 2    0000              ; By Kayto April 2026
+ 3    0000              ; Licensed under the MIT License. See LICENSE file for details.
+ 4    0000              ;
+ 5    0000              ; Assembler: compatible with Pasmo / SJASM+ (Intel-style, H-suffix hex)
+ 6    0000              ;
+ 7    0000              ; MC loaded via POKE loop at F605H (62981), 35 bytes.
+ 8    0000              ; Parameters at F628H (63016) - 4 bytes:
+ 9    0000              ;   +0 : pitch_lo  (low byte of half-period count)
+10    0000              ;   +1 : pitch_hi  (high byte)
+11    0000              ;   +2 : dur_lo    (low byte of full-cycle count)
+12    0000              ;   +3 : dur_hi    (high byte)
+13    0000              ;
+14    0000              ; BASIC usage:
+15    0000              ;   POKE 63016, pitch AND 255 : POKE 63017, INT(pitch/256)
+16    0000              ;   POKE 63018, dur   AND 255 : POKE 63019, INT(dur/256)
+17    0000              ;   X = CALL(62981)
+18    0000              ;   equivalent to: SOUND pitch, dur
+19    0000              ;
+20    0000              ; ROM EVIDENCE:
+21    0000              ;   BASIC SOUND handler at EPROM1:0x83CA uses OUT(86H) only.
+22    0000              ;   OUT(86H) appears exactly twice in the entire ROM, both in the SOUND handler.
+23    0000              ;   OUT(02H) appears zero times in the entire ROM.
+24    0000              ;   No timers involved. Pure software bit-bang on CD4099BE latch.
+25    0000              ;
+26    0000              ; PITCH reference (same values as BASIC SOUND n arg):
+27    0000              ;   A3=290  A4=144  B4=128  C5=121  D5=107  E5=95  F5=90  G5=80  A5=71
+28    0000
+29    0000              PARAM_PITCH     EQU     0F628H          ; half-period count word (LE)
+30    0000              PARAM_DUR       EQU     0F62AH          ; full-cycle count word  (LE)
+31    0000
+32    0000                              ORG     0F605H
+33    F605
+34    F605              ; === Entry point ===
+35    F605
+36    62981   42  40 246                        LD      HL,(PARAM_PITCH)     ; HL = pitch (half-period delay count)
+37    62984  235                                      EX      DE,HL               ; DE = pitch (temp)
+38    62985   42  42 246                        LD      HL,(PARAM_DUR)       ; HL = duration (full cycles)
+39    62988  235                                      EX      DE,HL               ; HL = pitch, DE = duration
+40    F60D
+41    F60D              ; === Tone loop: one iteration = one full cycle ===
+42    F60D
+43    F60D              TONE_LOOP:
+44    62989  175                                      XOR     A
+45    62990  211 134                               OUT     (86H),A             ; port 86H LOW (first half-period)
+46    62992   68                                      LD      B,H                 ; BC = pitch (half-period delay count)
+47    62993   77                                      LD      C,L
+48    F612
+49    F612              ; Half-period delay: ~26 T-states per iteration at 4 MHz
+50    F612
+51    F612              DELAY1:
+52    62994   11                                      DEC     BC
+53    62995  120                                      LD      A,B
+54    62996  177                                      OR      C
+55    62997   32 251                               JR      NZ,DELAY1
+56    F617
+57    62999   62   1                               LD      A,01H
+58    63001  211 134                               OUT     (86H),A             ; port 86H HIGH (second half-period)
+59    63003   68                                      LD      B,H
+60    63004   77                                      LD      C,L
+61    F61D
+62    F61D              DELAY2:
+63    63005   11                                      DEC     BC
+64    63006  120                                      LD      A,B
+65    63007  177                                      OR      C
+66    63008   32 251                               JR      NZ,DELAY2
+67    F622
+68    63010   27                                      DEC     DE                  ; decrement full-cycle count
+69    63011  122                                      LD      A,D
+70    63012  179                                      OR      E
+71    63013   32 230                               JR      NZ,TONE_LOOP        ; loop until DE = 0
+72    F627
+73    63015  201                                      RET
+74    F628
+75    F628              ; === Parameters (F628H, immediately after code) ===
+76    F628              ;   F628H (63016/63017): pitch word LE   POKE 63016 / 63017
+77    F628              ;   F62AH (63018/63019): duration word LE  POKE 63018 / 63019
+78    F628
+# file closed: SND4.asm

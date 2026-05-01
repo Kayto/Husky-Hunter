@@ -1,0 +1,46 @@
+; POKE_LIST.txt - SND4 MC bytes for BASIC DATA lines
+; ORG F605H (62981), 35 bytes, no runtime patching required
+; Parameters at F628H (63016) - 4 bytes: pitch word LE then duration word LE
+;
+; === DATA lines (900-902): 35 machine code bytes (from SND4.dlst) ===
+900 DATA  42, 40,246,235, 42, 42,246,235,175,211,134, 68, 77, 11,120
+901 DATA 177, 32,251, 62,  1,211,134, 68, 77, 11,120,177, 32,251, 27
+902 DATA 122,179, 32,230,201
+;
+; === Address map (decimal addresses from SND4.dlst) ===
+;
+; 62981 (F605H) : entry point / CALL address
+; 62981  42  40 246   LD HL,(F628H)    pitch_lo/hi -> HL
+; 62984  235          EX DE,HL
+; 62985  42  42 246   LD HL,(F62AH)    dur_lo/hi   -> HL
+; 62988  235          EX DE,HL         HL=pitch, DE=duration
+; 62989  175          XOR A
+; 62990  211 134      OUT (86H),A      port 86H LOW
+; 62992   68          LD B,H
+; 62993   77          LD C,L
+; 62994   11  DELAY1: DEC BC           half-period delay loop (~26T/iter)
+; 62995  120          LD A,B
+; 62996  177          OR C
+; 62997   32 251      JR NZ,DELAY1     (-5)
+; 62999   62   1      LD A,01H
+; 63001  211 134      OUT (86H),A      port 86H HIGH
+; 63003   68          LD B,H
+; 63004   77          LD C,L
+; 63005   11  DELAY2: DEC BC           half-period delay loop
+; 63006  120          LD A,B
+; 63007  177          OR C
+; 63008   32 251      JR NZ,DELAY2     (-5)
+; 63010   27          DEC DE
+; 63011  122          LD A,D
+; 63012  179          OR E
+; 63013   32 230      JR NZ,TONE_LOOP  (-26)
+; 63015  201          RET
+;
+; === Parameter block (63016 = F628H) ===
+; 63016 : pitch lo byte   POKE 63016, pitch AND 255
+; 63017 : pitch hi byte   POKE 63017, INT(pitch/256)
+; 63018 : dur lo byte     POKE 63018, dur AND 255
+; 63019 : dur hi byte     POKE 63019, INT(dur/256)
+;
+; === Pitch reference (= BASIC SOUND n values) ===
+; A3=290  A4=144  B4=128  C5=121  D5=107  E5=95  F5=90  G5=80  A5=71

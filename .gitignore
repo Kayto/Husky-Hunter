@@ -33,7 +33,7 @@ Docs/hunter_manual_text.txt
 Docs/Hardware/
 
 # Sound programs (development, not for release)
-Progs/Sound/
+# Progs/Sound/ -- unignored: SND4 confirmed working, ROM-verified
 
 # OS Terrain source data
 Progs/Terrain/OS_Terrain/
