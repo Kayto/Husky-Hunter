@@ -74,6 +74,9 @@ HARDWARE_README.md
 HuskyHCOM/hcomw/*
 !HuskyHCOM/hcomw/.gitkeep
 
+# HCOM MAME bridge folder (dev-only, not tracked)
+HuskyHCOM/MAME/
+
 # HSYNC files (device-specific, synced at runtime)
 HuskyHCOM/HSYNC/*
 !HuskyHCOM/HSYNC/.gitkeep
