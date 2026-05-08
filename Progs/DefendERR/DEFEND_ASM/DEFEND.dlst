@@ -1,0 +1,1028 @@
+# file opened: DEFEND.asm
+   1  0000              ; DEFEND.asm - Z80 source equivalent of gen_defend11.py
+   2  0000              ; DEFENDER game engine (Prerelease v0.1) for the Husky Hunter
+   3  0000              ; By Kayto April/May 2026
+   4  0000              ; Licensed under the MIT License. See LICENSE file for details.
+   5  0000              ;
+   6  0000              ; Compatible with sjasmplus (Intel-style H-suffix hex).
+   7  0000              ; Assemble with base address 0. All internal CALL/JP targets are
+   8  0000              ; relative to start. BASIC patches them to real addresses at runtime
+   9  0000              ; (patch loop, lines 9-11 of DefDat1.BAS).
+  10  0000              ; EXCEPTION: CALL 0005H (CP/M BDOS vector) is NOT patched.
+  11  0000              ;
+  12  0000              ; MC stored as: DIM MC$(717,1) ; AD=VARPTR(MC$)-1
+  13  0000              ;               1435 bytes at AD..AD+1434
+  14  0000              ; Called by:   Z=CALL(AD)
+  15  0000              ;
+  16  0000              ; Param block at F605H (62981) - fixed user code area:
+  17  0000              ;   +0         ship_row           current row of ship (0-56)
+  18  0000              ;   +1         old_row            previous ship row (for erase)
+  19  0000              ;   +2..+9     ship_sprite        8 bytes: 01 07 1F FF FF 1F 07 01
+  20  0000              ;   +10,+11    frame_delay        little-endian word (5000 = 1388H)
+  21  0000              ;   +12        star1_col          star 1 column (0-29)
+  22  0000              ;   +13        star1_row          star 1 row    (0-56)
+  23  0000              ;   +14        star2_col          star 2 column
+  24  0000              ;   +15        star2_row          star 2 row
+  25  0000              ;   +16        star3_col          star 3 column
+  26  0000              ;   +17        star3_row          star 3 row
+  27  0000              ;   +18        rng_seed           star RNG seed
+  28  0000              ;   +19        shot_col           laser bolt column
+  29  0000              ;   +20        shot_row           laser bolt row
+  30  0000              ;   +21        shot_active        0=none, 1=in flight
+  31  0000              ;   +22        enemy1_col         enemy 1 column
+  32  0000              ;   +23        enemy1_row         enemy 1 row
+  33  0000              ;   +24        enemy1_active      0=waiting, 1=on screen
+  34  0000              ;   +25        enemy1_phase       movement phase (0-3 mod)
+  35  0000              ;   +26..+33   enemy_sprite       8 bytes (shared): 1C A0 3E F1 F1 3E A0 1C
+  36  0000              ;   +34        enemy1_dy          direction: 01=down, FF=up
+  37  0000              ;   +35        enemy2_col         enemy 2 column
+  38  0000              ;   +36        enemy2_row         enemy 2 row
+  39  0000              ;   +37        enemy2_active      0=waiting, 1=on screen
+  40  0000              ;   +38        enemy2_phase       movement phase
+  41  0000              ;   +39        enemy2_dy          direction: 01=down, FF=up
+  42  0000              ;   +40        kill_count         enemies destroyed (score, 0-FF)
+  43  0000              ;   +41        wave               0=wave1, 1=wave2 (enemy2 enabled)
+  44  0000              ;   +42        lives              lives remaining (0-3)
+  45  0000              ;   +43        player_dead        0=alive, 1=dead (set by collision)
+  46  0000              ;   +44..+51   heart_sprite       8 bytes: 36 7E 7E 3C 18 10 00 00
+  47  0000              ;   +52        event_code         0=none 1=laser 2=explosion 3=death
+  48  0000              ;
+  49  0000              ;   Total: 53 bytes. Hardware limit: 80 bytes.
+  50  0000              ;
+  51  0000              ; BDOS entry: 0005H. BASIC uses fn=0BH (key available?), fn=06H (read key).
+  52  0000              ;   LD C,0BH ; CALL 0005H ; test A
+  53  0000              ;   LD C,06H ; LD E,0FFH  ; CALL 0005H -> A = key char
+  54  0000
+  55  0000              ; ============================================================
+  56  0000              ;  EQUATES
+  57  0000              ; ============================================================
+  58  0000
+  59  0000              PARAM_BASE      EQU     0F605H
+  60  0000
+  61  0000              ship_row        EQU     PARAM_BASE+0
+  62  0000              old_row         EQU     PARAM_BASE+1
+  63  0000              ship_sprite     EQU     PARAM_BASE+2
+  64  0000              frame_delay     EQU     PARAM_BASE+10
+  65  0000              star1_col       EQU     PARAM_BASE+12
+  66  0000              star1_row       EQU     PARAM_BASE+13
+  67  0000              star2_col       EQU     PARAM_BASE+14
+  68  0000              star2_row       EQU     PARAM_BASE+15
+  69  0000              star3_col       EQU     PARAM_BASE+16
+  70  0000              star3_row       EQU     PARAM_BASE+17
+  71  0000              rng_seed        EQU     PARAM_BASE+18
+  72  0000              shot_col        EQU     PARAM_BASE+19
+  73  0000              shot_row        EQU     PARAM_BASE+20
+  74  0000              shot_active     EQU     PARAM_BASE+21
+  75  0000              enemy1_col      EQU     PARAM_BASE+22
+  76  0000              enemy1_row      EQU     PARAM_BASE+23
+  77  0000              enemy1_active   EQU     PARAM_BASE+24
+  78  0000              enemy1_phase    EQU     PARAM_BASE+25
+  79  0000              enemy_sprite    EQU     PARAM_BASE+26   ; 8 bytes, shared between enemies
+  80  0000              enemy1_dy       EQU     PARAM_BASE+34
+  81  0000              enemy2_col      EQU     PARAM_BASE+35
+  82  0000              enemy2_row      EQU     PARAM_BASE+36
+  83  0000              enemy2_active   EQU     PARAM_BASE+37
+  84  0000              enemy2_phase    EQU     PARAM_BASE+38
+  85  0000              enemy2_dy       EQU     PARAM_BASE+39
+  86  0000              kill_count      EQU     PARAM_BASE+40
+  87  0000              wave            EQU     PARAM_BASE+41
+  88  0000              lives           EQU     PARAM_BASE+42
+  89  0000              player_dead     EQU     PARAM_BASE+43
+  90  0000              heart_sprite    EQU     PARAM_BASE+44   ; 8 bytes
+  91  0000              event_code      EQU     PARAM_BASE+52
+  92  0000
+  93  0000              SHIP_COL        EQU     2
+  94  0000              SHIP_HEIGHT     EQU     8
+  95  0000              ENEMY_HEIGHT    EQU     8
+  96  0000              SHIP_SPEED      EQU     2
+  97  0000              MAX_COL         EQU     29
+  98  0000              MAX_ROW         EQU     56
+  99  0000              HEART_COL       EQU     0
+ 100  0000              STAR_BYTE_TOP   EQU     03H
+ 101  0000              STAR_BYTE_BOT   EQU     01H
+ 102  0000              SHOT_BYTE_TOP   EQU     3CH
+ 103  0000              SHOT_BYTE_BOT   EQU     3CH
+ 104  0000              WAVE2_THRESHOLD EQU     5
+ 105  0000              KEY_A           EQU     61H
+ 106  0000              KEY_Z           EQU     7AH
+ 107  0000              KEY_SPACE       EQU     20H
+ 108  0000              KEY_ESC         EQU     1BH
+ 109  0000              BDOS            EQU     0005H
+ 110  0000              LCD_CMD         EQU     21H
+ 111  0000              LCD_DATA        EQU     20H
+ 112  0000
+ 113  0000              ; ============================================================
+ 114  0000              ;  ENTRY POINT: draw ship at initial position
+ 115  0000              ; ============================================================
+ 116  0000
+ 117  0000                              ORG     0000H
+ 118  0000
+ 119  0       58   5 246                        LD      A,(ship_row)
+ 120  3       14   2                               LD      C,SHIP_COL
+ 121  5      205  88   5                        CALL    calc_vram
+ 122  8       33   7 246                        LD      HL,ship_sprite
+ 123  11       6   8                               LD      B,SHIP_HEIGHT
+ 124  13     205  62   5                        CALL    draw_sprite
+ 125  0010
+ 126  0010              ; ============================================================
+ 127  0010              ;  MAIN LOOP
+ 128  0010              ; ============================================================
+ 129  0010
+ 130  0010              main_loop:
+ 131  0010
+ 132  0010              ; --- Star 1: erase old position ---
+ 133  0010              ; A=row, C=col -> calc_vram uses A=row, C=col
+ 134  0010              ; Load col into B first; row into A; LD C,B copies col into C
+ 135  16      58  17 246                        LD      A,(star1_col)
+ 136  19      71                                      LD      B,A
+ 137  20      58  18 246                        LD      A,(star1_row)
+ 138  23      72                                      LD      C,B
+ 139  24     205  88   5                        CALL    calc_vram
+ 140  27     205 107   5                        CALL    set_cursor
+ 141  30     175                                      XOR     A
+ 142  31     205 134   5                        CALL    write_byte
+ 143  34     205  80   5                        CALL    next_row
+ 144  37     205 107   5                        CALL    set_cursor
+ 145  40     175                                      XOR     A
+ 146  41     205 134   5                        CALL    write_byte
+ 147  002C              ; --- Star 1: scroll (move left), wrap at col 0 ---
+ 148  44     120                                      LD      A,B             ; A = old col (B still holds it)
+ 149  45     183                                      OR      A               ; test zero
+ 150  46      40   3                               JR      Z,s1_wrap
+ 151  48      61                                      DEC     A
+ 152  49      24  15                               JR      s1_store
+ 153  0033              s1_wrap:
+ 154  51      58  23 246                        LD      A,(rng_seed)
+ 155  54     198  17                               ADD     A,11H
+ 156  56      50  23 246                        LD      (rng_seed),A
+ 157  59     230  62                               AND     3EH
+ 158  61      50  18 246                        LD      (star1_row),A
+ 159  64      62  29                               LD      A,MAX_COL       ; reset to right edge
+ 160  0042              s1_store:
+ 161  66      50  17 246                        LD      (star1_col),A
+ 162  69      71                                      LD      B,A             ; save new col in B
+ 163  0046              ; --- Star 1: draw at new position ---
+ 164  70      58  18 246                        LD      A,(star1_row)
+ 165  73      72                                      LD      C,B
+ 166  74     205  88   5                        CALL    calc_vram
+ 167  77     205 107   5                        CALL    set_cursor
+ 168  80      62   3                               LD      A,STAR_BYTE_TOP
+ 169  82     205 134   5                        CALL    write_byte
+ 170  85     205  80   5                        CALL    next_row
+ 171  88     205 107   5                        CALL    set_cursor
+ 172  91      62   1                               LD      A,STAR_BYTE_BOT
+ 173  93     205 134   5                        CALL    write_byte
+ 174  0060
+ 175  0060              ; --- Star 2: erase old position ---
+ 176  96      58  19 246                        LD      A,(star2_col)
+ 177  99      71                                      LD      B,A
+ 178  100     58  20 246                        LD      A,(star2_row)
+ 179  103     72                                      LD      C,B
+ 180  104    205  88   5                        CALL    calc_vram
+ 181  107    205 107   5                        CALL    set_cursor
+ 182  110    175                                      XOR     A
+ 183  111    205 134   5                        CALL    write_byte
+ 184  114    205  80   5                        CALL    next_row
+ 185  117    205 107   5                        CALL    set_cursor
+ 186  120    175                                      XOR     A
+ 187  121    205 134   5                        CALL    write_byte
+ 188  007C              ; --- Star 2: scroll and wrap ---
+ 189  124    120                                      LD      A,B
+ 190  125    183                                      OR      A
+ 191  126     40   3                               JR      Z,s2_wrap
+ 192  128     61                                      DEC     A
+ 193  129     24  15                               JR      s2_store
+ 194  0083              s2_wrap:
+ 195  131     58  23 246                        LD      A,(rng_seed)
+ 196  134    198  17                               ADD     A,11H
+ 197  136     50  23 246                        LD      (rng_seed),A
+ 198  139    230  62                               AND     3EH
+ 199  141     50  20 246                        LD      (star2_row),A
+ 200  144     62  29                               LD      A,MAX_COL
+ 201  0092              s2_store:
+ 202  146     50  19 246                        LD      (star2_col),A
+ 203  149     71                                      LD      B,A
+ 204  0096              ; --- Star 2: draw at new position ---
+ 205  150     58  20 246                        LD      A,(star2_row)
+ 206  153     72                                      LD      C,B
+ 207  154    205  88   5                        CALL    calc_vram
+ 208  157    205 107   5                        CALL    set_cursor
+ 209  160     62   3                               LD      A,STAR_BYTE_TOP
+ 210  162    205 134   5                        CALL    write_byte
+ 211  165    205  80   5                        CALL    next_row
+ 212  168    205 107   5                        CALL    set_cursor
+ 213  171     62   1                               LD      A,STAR_BYTE_BOT
+ 214  173    205 134   5                        CALL    write_byte
+ 215  00B0
+ 216  00B0              ; --- Star 3: erase old position ---
+ 217  176     58  21 246                        LD      A,(star3_col)
+ 218  179     71                                      LD      B,A
+ 219  180     58  22 246                        LD      A,(star3_row)
+ 220  183     72                                      LD      C,B
+ 221  184    205  88   5                        CALL    calc_vram
+ 222  187    205 107   5                        CALL    set_cursor
+ 223  190    175                                      XOR     A
+ 224  191    205 134   5                        CALL    write_byte
+ 225  194    205  80   5                        CALL    next_row
+ 226  197    205 107   5                        CALL    set_cursor
+ 227  200    175                                      XOR     A
+ 228  201    205 134   5                        CALL    write_byte
+ 229  00CC              ; --- Star 3: scroll and wrap ---
+ 230  204    120                                      LD      A,B
+ 231  205    183                                      OR      A
+ 232  206     40   3                               JR      Z,s3_wrap
+ 233  208     61                                      DEC     A
+ 234  209     24  15                               JR      s3_store
+ 235  00D3              s3_wrap:
+ 236  211     58  23 246                        LD      A,(rng_seed)
+ 237  214    198  17                               ADD     A,11H
+ 238  216     50  23 246                        LD      (rng_seed),A
+ 239  219    230  62                               AND     3EH
+ 240  221     50  22 246                        LD      (star3_row),A
+ 241  224     62  29                               LD      A,MAX_COL
+ 242  00E2              s3_store:
+ 243  226     50  21 246                        LD      (star3_col),A
+ 244  229     71                                      LD      B,A
+ 245  00E6              ; --- Star 3: draw at new position ---
+ 246  230     58  22 246                        LD      A,(star3_row)
+ 247  233     72                                      LD      C,B
+ 248  234    205  88   5                        CALL    calc_vram
+ 249  237    205 107   5                        CALL    set_cursor
+ 250  240     62   3                               LD      A,STAR_BYTE_TOP
+ 251  242    205 134   5                        CALL    write_byte
+ 252  245    205  80   5                        CALL    next_row
+ 253  248    205 107   5                        CALL    set_cursor
+ 254  251     62   1                               LD      A,STAR_BYTE_BOT
+ 255  253    205 134   5                        CALL    write_byte
+ 256  0100
+ 257  0100              ; --- Heart 0: draw or erase at row 0 (needs lives >= 1) ---
+ 258  256     58  47 246                        LD      A,(lives)
+ 259  259    254   1                               CP      1
+ 260  261     48  14                               JR      NC,h0_full      ; lives >= 1: draw full
+ 261  263     62   0                               LD      A,0             ; heart_row = 0
+ 262  265     14   0                               LD      C,HEART_COL
+ 263  267    205  88   5                        CALL    calc_vram
+ 264  270      6   8                               LD      B,8
+ 265  272    205  47   5                        CALL    erase_rows
+ 266  275     24  15                               JR      h0_done
+ 267  0115              h0_full:
+ 268  277     62   0                               LD      A,0
+ 269  279     14   0                               LD      C,HEART_COL
+ 270  281    205  88   5                        CALL    calc_vram
+ 271  284     33  49 246                        LD      HL,heart_sprite
+ 272  287      6   8                               LD      B,8
+ 273  289    205  62   5                        CALL    draw_sprite
+ 274  0124              h0_done:
+ 275  0124
+ 276  0124              ; --- Heart 1: draw or erase at row 8 (needs lives >= 2) ---
+ 277  292     58  47 246                        LD      A,(lives)
+ 278  295    254   2                               CP      2
+ 279  297     48  14                               JR      NC,h1_full
+ 280  299     62   8                               LD      A,8
+ 281  301     14   0                               LD      C,HEART_COL
+ 282  303    205  88   5                        CALL    calc_vram
+ 283  306      6   8                               LD      B,8
+ 284  308    205  47   5                        CALL    erase_rows
+ 285  311     24  15                               JR      h1_done
+ 286  0139              h1_full:
+ 287  313     62   8                               LD      A,8
+ 288  315     14   0                               LD      C,HEART_COL
+ 289  317    205  88   5                        CALL    calc_vram
+ 290  320     33  49 246                        LD      HL,heart_sprite
+ 291  323      6   8                               LD      B,8
+ 292  325    205  62   5                        CALL    draw_sprite
+ 293  0148              h1_done:
+ 294  0148
+ 295  0148              ; --- Heart 2: draw or erase at row 16 (needs lives >= 3) ---
+ 296  328     58  47 246                        LD      A,(lives)
+ 297  331    254   3                               CP      3
+ 298  333     48  14                               JR      NC,h2_full
+ 299  335     62  16                               LD      A,16
+ 300  337     14   0                               LD      C,HEART_COL
+ 301  339    205  88   5                        CALL    calc_vram
+ 302  342      6   8                               LD      B,8
+ 303  344    205  47   5                        CALL    erase_rows
+ 304  347     24  15                               JR      h2_done
+ 305  015D              h2_full:
+ 306  349     62  16                               LD      A,16
+ 307  351     14   0                               LD      C,HEART_COL
+ 308  353    205  88   5                        CALL    calc_vram
+ 309  356     33  49 246                        LD      HL,heart_sprite
+ 310  359      6   8                               LD      B,8
+ 311  361    205  62   5                        CALL    draw_sprite
+ 312  016C              h2_done:
+ 313  016C
+ 314  016C              ; --- Save ship_row -> old_row ---
+ 315  364     58   5 246                        LD      A,(ship_row)
+ 316  367     50   6 246                        LD      (old_row),A
+ 317  0172
+ 318  0172              ; --- Key poll: BDOS fn 0BH (returns A=0xFF if key available) ---
+ 319  370     14  11                               LD      C,0BH
+ 320  372    205   5   0                        CALL    BDOS
+ 321  375    167                                      AND     A               ; test A
+ 322  376     40  83                               JR      Z,no_key        ; zero -> no key
+ 323  017A
+ 324  017A              ; --- Key read: BDOS fn 06H, E=FFH (read key, no echo) ---
+ 325  378     14   6                               LD      C,06H
+ 326  380     30 255                               LD      E,0FFH
+ 327  382    205   5   0                        CALL    BDOS
+ 328  0181
+ 329  385    254  27                               CP      KEY_ESC
+ 330  387     32   1                               JR      NZ,not_esc
+ 331  389    201                                      RET                     ; ESC -> exit to BASIC
+ 332  0186
+ 333  0186              not_esc:
+ 334  390    246  32                               OR      KEY_SPACE       ; force bit 5 (lowercase -> uppercase range)
+ 335  392    254  32                               CP      KEY_SPACE
+ 336  394     40  36                               JR      Z,fire_shot
+ 337  396    254  97                               CP      KEY_A
+ 338  398     40   6                               JR      Z,ship_up
+ 339  400    254 122                               CP      KEY_Z
+ 340  402     40  12                               JR      Z,ship_down
+ 341  404     24  55                               JR      no_key
+ 342  0196
+ 343  0196              ship_up:
+ 344  406     58   5 246                        LD      A,(ship_row)
+ 345  409    214   2                               SUB     SHIP_SPEED      ; move up (lower row number)
+ 346  411     48  14                               JR      NC,ship_store
+ 347  413    175                                      XOR     A               ; clamp to 0
+ 348  414     24  11                               JR      ship_store
+ 349  01A0
+ 350  01A0              ship_down:
+ 351  416     58   5 246                        LD      A,(ship_row)
+ 352  419    198   2                               ADD     A,SHIP_SPEED    ; move down (higher row number)
+ 353  421    254  57                               CP      MAX_ROW+1
+ 354  423     56   2                               JR      C,ship_store
+ 355  425     62  56                               LD      A,MAX_ROW       ; clamp to MAX_ROW
+ 356  01AB
+ 357  01AB              ship_store:
+ 358  427     50   5 246                        LD      (ship_row),A
+ 359  430     24  29                               JR      no_key
+ 360  01B0
+ 361  01B0              fire_shot:
+ 362  432     58  26 246                        LD      A,(shot_active)
+ 363  435    183                                      OR      A
+ 364  436     32  23                               JR      NZ,no_key       ; already a shot in flight
+ 365  438     62   3                               LD      A,SHIP_COL+1    ; shot starts one column right of ship
+ 366  440     50  24 246                        LD      (shot_col),A
+ 367  443     58   5 246                        LD      A,(ship_row)
+ 368  446    198   3                               ADD     A,3             ; shot vertically centred on ship
+ 369  448     50  25 246                        LD      (shot_row),A
+ 370  451     62   1                               LD      A,1
+ 371  453     50  26 246                        LD      (shot_active),A
+ 372  01C8                              ; event_code = 1 (laser fired)
+ 373  456     62   1                               LD      A,1
+ 374  458     50  57 246                        LD      (event_code),A
+ 375  01CD
+ 376  01CD              no_key:
+ 377  01CD
+ 378  01CD              ; --- Ship update: erase and redraw only if row changed ---
+ 379  461     58   6 246                        LD      A,(old_row)
+ 380  464     71                                      LD      B,A             ; B = old_row
+ 381  465     58   5 246                        LD      A,(ship_row)
+ 382  468    184                                      CP      B               ; same as before?
+ 383  469     40  27                               JR      Z,after_ship_move
+ 384  01D7
+ 385  471    120                                      LD      A,B             ; erase at old_row
+ 386  472     14   2                               LD      C,SHIP_COL
+ 387  474    205  88   5                        CALL    calc_vram
+ 388  477      6   8                               LD      B,SHIP_HEIGHT
+ 389  479    205  47   5                        CALL    erase_rows
+ 390  01E2
+ 391  482     58   5 246                        LD      A,(ship_row)    ; draw at new row
+ 392  485     14   2                               LD      C,SHIP_COL
+ 393  487    205  88   5                        CALL    calc_vram
+ 394  490     33   7 246                        LD      HL,ship_sprite
+ 395  493      6   8                               LD      B,SHIP_HEIGHT
+ 396  495    205  62   5                        CALL    draw_sprite
+ 397  01F2
+ 398  01F2              after_ship_move:
+ 399  01F2
+ 400  01F2              ; --- Projectile update ---
+ 401  498     58  26 246                        LD      A,(shot_active)
+ 402  501    183                                      OR      A
+ 403  502     40  72                               JR      Z,skip_shot     ; no shot -> skip
+ 404  01F8
+ 405  01F8                              ; erase shot at current position
+ 406  504     58  24 246                        LD      A,(shot_col)
+ 407  507     71                                      LD      B,A
+ 408  508     58  25 246                        LD      A,(shot_row)
+ 409  511     72                                      LD      C,B
+ 410  512    205  88   5                        CALL    calc_vram
+ 411  515    205 107   5                        CALL    set_cursor
+ 412  518    175                                      XOR     A
+ 413  519    205 134   5                        CALL    write_byte
+ 414  522    205  80   5                        CALL    next_row
+ 415  525    205 107   5                        CALL    set_cursor
+ 416  528    175                                      XOR     A
+ 417  529    205 134   5                        CALL    write_byte
+ 418  0214
+ 419  0214                              ; advance shot one column right
+ 420  532     58  24 246                        LD      A,(shot_col)
+ 421  535     60                                      INC     A
+ 422  536    254  30                               CP      MAX_COL+1       ; past right edge?
+ 423  538     56   6                               JR      C,shot_store
+ 424  540    175                                      XOR     A               ; deactivate
+ 425  541     50  26 246                        LD      (shot_active),A
+ 426  544     24  30                               JR      skip_shot
+ 427  0222
+ 428  0222              shot_store:
+ 429  546     50  24 246                        LD      (shot_col),A
+ 430  549     71                                      LD      B,A             ; B = new col
+ 431  0226
+ 432  0226                              ; draw shot at new position
+ 433  550     58  25 246                        LD      A,(shot_row)
+ 434  553     72                                      LD      C,B
+ 435  554    205  88   5                        CALL    calc_vram
+ 436  557    205 107   5                        CALL    set_cursor
+ 437  560     62  60                               LD      A,SHOT_BYTE_TOP
+ 438  562    205 134   5                        CALL    write_byte
+ 439  565    205  80   5                        CALL    next_row
+ 440  568    205 107   5                        CALL    set_cursor
+ 441  571     62  60                               LD      A,SHOT_BYTE_BOT
+ 442  573    205 134   5                        CALL    write_byte
+ 443  0240
+ 444  0240              skip_shot:
+ 445  0240
+ 446  0240              ; ============================================================
+ 447  0240              ;  COLLISION CHECK: shot vs enemy 1
+ 448  0240              ; ============================================================
+ 449  576     58  26 246                        LD      A,(shot_active)
+ 450  579    183                                      OR      A
+ 451  580     40  93                               JR      Z,try_e2_coll   ; no shot -> try enemy2
+ 452  0246
+ 453  582     58  29 246                        LD      A,(enemy1_active)
+ 454  585    183                                      OR      A
+ 455  586     40  87                               JR      Z,try_e2_coll   ; enemy1 not active
+ 456  024C
+ 457  024C                              ; same column?
+ 458  588     58  24 246                        LD      A,(shot_col)
+ 459  591     71                                      LD      B,A
+ 460  592     58  27 246                        LD      A,(enemy1_col)
+ 461  595    184                                      CP      B
+ 462  596     32  77                               JR      NZ,try_e2_coll
+ 463  0256
+ 464  0256                              ; row overlap? shot_row - enemy1_row < 8
+ 465  598     58  25 246                        LD      A,(shot_row)
+ 466  601     71                                      LD      B,A
+ 467  602     58  28 246                        LD      A,(enemy1_row)
+ 468  605     79                                      LD      C,A
+ 469  606    120                                      LD      A,B             ; A = shot_row
+ 470  607    145                                      SUB     C               ; A = shot_row - enemy1_row (carry = enemy above)
+ 471  608    254   8                               CP      8               ; if >= 8 (or wrapped), not a hit
+ 472  610     48  63                               JR      NC,try_e2_coll  ; miss
+ 473  0264
+ 474  0264                              ; --- HIT enemy 1: erase shot ---
+ 475  612     58  24 246                        LD      A,(shot_col)
+ 476  615     71                                      LD      B,A
+ 477  616     58  25 246                        LD      A,(shot_row)
+ 478  619     72                                      LD      C,B
+ 479  620    205  88   5                        CALL    calc_vram
+ 480  623    205 107   5                        CALL    set_cursor
+ 481  626    175                                      XOR     A
+ 482  627    205 134   5                        CALL    write_byte
+ 483  630    205  80   5                        CALL    next_row
+ 484  633    205 107   5                        CALL    set_cursor
+ 485  636    175                                      XOR     A
+ 486  637    205 134   5                        CALL    write_byte
+ 487  640    175                                      XOR     A
+ 488  641     50  26 246                        LD      (shot_active),A
+ 489  0284
+ 490  0284                              ; erase and deactivate enemy1
+ 491  644     58  27 246                        LD      A,(enemy1_col)
+ 492  647     71                                      LD      B,A
+ 493  648     58  28 246                        LD      A,(enemy1_row)
+ 494  651     72                                      LD      C,B
+ 495  652    205  88   5                        CALL    calc_vram
+ 496  655      6   8                               LD      B,ENEMY_HEIGHT
+ 497  657    205  47   5                        CALL    erase_rows
+ 498  660    175                                      XOR     A
+ 499  661     50  29 246                        LD      (enemy1_active),A
+ 500  0298
+ 501  664    205  31   5                        CALL    hit_count_up
+ 502  667     62   2                               LD      A,2
+ 503  669     50  57 246                        LD      (event_code),A
+ 504  672    195  93   4                        JP      after_enemy1
+ 505  02A3
+ 506  02A3              ; ============================================================
+ 507  02A3              ;  COLLISION CHECK: shot vs enemy 2
+ 508  02A3              ; ============================================================
+ 509  02A3              try_e2_coll:
+ 510  675     58  26 246                        LD      A,(shot_active)
+ 511  678    183                                      OR      A
+ 512  679     40  93                               JR      Z,no_collision
+ 513  02A9
+ 514  681     58  42 246                        LD      A,(enemy2_active)
+ 515  684    183                                      OR      A
+ 516  685     40  87                               JR      Z,no_collision
+ 517  02AF
+ 518  02AF                              ; same column?
+ 519  687     58  24 246                        LD      A,(shot_col)
+ 520  690     71                                      LD      B,A
+ 521  691     58  40 246                        LD      A,(enemy2_col)
+ 522  694    184                                      CP      B
+ 523  695     32  77                               JR      NZ,no_collision
+ 524  02B9
+ 525  02B9                              ; row overlap?
+ 526  697     58  25 246                        LD      A,(shot_row)
+ 527  700     71                                      LD      B,A
+ 528  701     58  41 246                        LD      A,(enemy2_row)
+ 529  704     79                                      LD      C,A
+ 530  705    120                                      LD      A,B
+ 531  706    145                                      SUB     C               ; shot_row - enemy2_row
+ 532  707    254   8                               CP      8
+ 533  709     48  63                               JR      NC,no_collision
+ 534  02C7
+ 535  02C7                              ; --- HIT enemy 2: erase shot ---
+ 536  711     58  24 246                        LD      A,(shot_col)
+ 537  714     71                                      LD      B,A
+ 538  715     58  25 246                        LD      A,(shot_row)
+ 539  718     72                                      LD      C,B
+ 540  719    205  88   5                        CALL    calc_vram
+ 541  722    205 107   5                        CALL    set_cursor
+ 542  725    175                                      XOR     A
+ 543  726    205 134   5                        CALL    write_byte
+ 544  729    205  80   5                        CALL    next_row
+ 545  732    205 107   5                        CALL    set_cursor
+ 546  735    175                                      XOR     A
+ 547  736    205 134   5                        CALL    write_byte
+ 548  739    175                                      XOR     A
+ 549  740     50  26 246                        LD      (shot_active),A
+ 550  02E7
+ 551  02E7                              ; erase and deactivate enemy2
+ 552  743     58  40 246                        LD      A,(enemy2_col)
+ 553  746     71                                      LD      B,A
+ 554  747     58  41 246                        LD      A,(enemy2_row)
+ 555  750     72                                      LD      C,B
+ 556  751    205  88   5                        CALL    calc_vram
+ 557  754      6   8                               LD      B,ENEMY_HEIGHT
+ 558  756    205  47   5                        CALL    erase_rows
+ 559  759    175                                      XOR     A
+ 560  760     50  42 246                        LD      (enemy2_active),A
+ 561  02FB
+ 562  763    205  31   5                        CALL    hit_count_up
+ 563  766     62   2                               LD      A,2
+ 564  768     50  57 246                        LD      (event_code),A
+ 565  771    195  15   5                        JP      after_enemy2
+ 566  0306
+ 567  0306              ; ============================================================
+ 568  0306              ;  NO SHOT COLLISION: redraw ship, check ship/enemy collisions
+ 569  0306              ; ============================================================
+ 570  0306              no_collision:
+ 571  774     58   5 246                        LD      A,(ship_row)
+ 572  777     14   2                               LD      C,SHIP_COL
+ 573  779    205  88   5                        CALL    calc_vram
+ 574  782     33   7 246                        LD      HL,ship_sprite
+ 575  785      6   8                               LD      B,SHIP_HEIGHT
+ 576  787    205  62   5                        CALL    draw_sprite
+ 577  0316
+ 578  0316              ; --- Ship/Enemy 1 collision ---
+ 579  790     58  29 246                        LD      A,(enemy1_active)
+ 580  793    183                                      OR      A
+ 581  794     40  72                               JR      Z,se1_miss      ; enemy1 not active
+ 582  031C
+ 583  796     58  27 246                        LD      A,(enemy1_col)
+ 584  799    254   2                               CP      SHIP_COL
+ 585  801     32  65                               JR      NZ,se1_miss     ; not same column
+ 586  0323
+ 587  803     58   5 246                        LD      A,(ship_row)
+ 588  806     71                                      LD      B,A             ; B = ship_row
+ 589  807     58  28 246                        LD      A,(enemy1_row)
+ 590  810     79                                      LD      C,A             ; C = enemy1_row
+ 591  811    120                                      LD      A,B             ; A = ship_row
+ 592  812    145                                      SUB     C               ; A = ship_row - enemy1_row
+ 593  813     56   6                               JR      C,se1_chk2      ; enemy above ship
+ 594  815    254   8                               CP      8
+ 595  817     48  49                               JR      NC,se1_miss     ; no overlap (gap >= 8)
+ 596  819     24   6                               JR      se1_hit
+ 597  0335
+ 598  0335              se1_chk2:       ; enemy1_row > ship_row
+ 599  821    121                                      LD      A,C             ; A = enemy1_row
+ 600  822    144                                      SUB     B               ; A = enemy1_row - ship_row
+ 601  823    254   8                               CP      8
+ 602  825     48  41                               JR      NC,se1_miss
+ 603  033B
+ 604  033B              se1_hit:
+ 605  033B                              ; erase ship
+ 606  827     58   5 246                        LD      A,(ship_row)
+ 607  830     14   2                               LD      C,SHIP_COL
+ 608  832    205  88   5                        CALL    calc_vram
+ 609  835      6   8                               LD      B,SHIP_HEIGHT
+ 610  837    205  47   5                        CALL    erase_rows
+ 611  0348                              ; erase enemy1
+ 612  840     58  28 246                        LD      A,(enemy1_row)
+ 613  843     14   2                               LD      C,SHIP_COL
+ 614  845    205  88   5                        CALL    calc_vram
+ 615  848      6   8                               LD      B,ENEMY_HEIGHT
+ 616  850    205  47   5                        CALL    erase_rows
+ 617  853    175                                      XOR     A
+ 618  854     50  29 246                        LD      (enemy1_active),A
+ 619  857     62   1                               LD      A,1
+ 620  859     50  48 246                        LD      (player_dead),A
+ 621  862     62   3                               LD      A,3
+ 622  864     50  57 246                        LD      (event_code),A
+ 623  867    201                                      RET                     ; return immediately to BASIC
+ 624  0364
+ 625  0364              se1_miss:
+ 626  0364
+ 627  0364              ; --- Ship/Enemy 2 collision ---
+ 628  868     58  42 246                        LD      A,(enemy2_active)
+ 629  871    183                                      OR      A
+ 630  872     40  72                               JR      Z,se2_miss
+ 631  036A
+ 632  874     58  40 246                        LD      A,(enemy2_col)
+ 633  877    254   2                               CP      SHIP_COL
+ 634  879     32  65                               JR      NZ,se2_miss
+ 635  0371
+ 636  881     58   5 246                        LD      A,(ship_row)
+ 637  884     71                                      LD      B,A
+ 638  885     58  41 246                        LD      A,(enemy2_row)
+ 639  888     79                                      LD      C,A
+ 640  889    120                                      LD      A,B
+ 641  890    145                                      SUB     C
+ 642  891     56   6                               JR      C,se2_chk2
+ 643  893    254   8                               CP      8
+ 644  895     48  49                               JR      NC,se2_miss
+ 645  897     24   6                               JR      se2_hit
+ 646  0383
+ 647  0383              se2_chk2:
+ 648  899    121                                      LD      A,C
+ 649  900    144                                      SUB     B
+ 650  901    254   8                               CP      8
+ 651  903     48  41                               JR      NC,se2_miss
+ 652  0389
+ 653  0389              se2_hit:
+ 654  905     58   5 246                        LD      A,(ship_row)
+ 655  908     14   2                               LD      C,SHIP_COL
+ 656  910    205  88   5                        CALL    calc_vram
+ 657  913      6   8                               LD      B,SHIP_HEIGHT
+ 658  915    205  47   5                        CALL    erase_rows
+ 659  918     58  41 246                        LD      A,(enemy2_row)
+ 660  921     14   2                               LD      C,SHIP_COL
+ 661  923    205  88   5                        CALL    calc_vram
+ 662  926      6   8                               LD      B,ENEMY_HEIGHT
+ 663  928    205  47   5                        CALL    erase_rows
+ 664  931    175                                      XOR     A
+ 665  932     50  42 246                        LD      (enemy2_active),A
+ 666  935     62   1                               LD      A,1
+ 667  937     50  48 246                        LD      (player_dead),A
+ 668  940     62   3                               LD      A,3
+ 669  942     50  57 246                        LD      (event_code),A
+ 670  945    201                                      RET
+ 671  03B2
+ 672  03B2              se2_miss:
+ 673  03B2
+ 674  03B2              ; ============================================================
+ 675  03B2              ;  ENEMY 1 UPDATE
+ 676  03B2              ; ============================================================
+ 677  946     58  29 246                        LD      A,(enemy1_active)
+ 678  949    183                                      OR      A
+ 679  950     40 100                               JR      Z,enemy1_spawn  ; not active -> spawn
+ 680  03B8
+ 681  03B8                              ; --- Move: erase at current position ---
+ 682  952     58  27 246                        LD      A,(enemy1_col)
+ 683  955     71                                      LD      B,A
+ 684  956     58  28 246                        LD      A,(enemy1_row)
+ 685  959     72                                      LD      C,B
+ 686  960    205  88   5                        CALL    calc_vram
+ 687  963      6   8                               LD      B,ENEMY_HEIGHT
+ 688  965    205  47   5                        CALL    erase_rows
+ 689  03C8
+ 690  03C8                              ; --- Phase counter: only move every 4th frame ---
+ 691  968     58  30 246                        LD      A,(enemy1_phase)
+ 692  971     60                                      INC     A
+ 693  972    230   3                               AND     03H
+ 694  974     50  30 246                        LD      (enemy1_phase),A
+ 695  977    183                                      OR      A
+ 696  978     32 118                               JR      NZ,enemy1_draw  ; phase != 0: redraw without moving
+ 697  03D4
+ 698  03D4                              ; --- Horizontal: move left ---
+ 699  980     58  27 246                        LD      A,(enemy1_col)
+ 700  983    183                                      OR      A
+ 701  984     40  60                               JR      Z,enemy1_deact  ; reached left edge -> deactivate
+ 702  986     61                                      DEC     A
+ 703  987     50  27 246                        LD      (enemy1_col),A
+ 704  03DE
+ 705  03DE                              ; --- Vertical: check direction ---
+ 706  990     58  39 246                        LD      A,(enemy1_dy)
+ 707  993    254   1                               CP      01H
+ 708  995     40  12                               JR      Z,e1_down       ; dy=1 -> move down
+ 709  03E5
+ 710  03E5                              ; --- Moving up ---
+ 711  997     58  28 246                        LD      A,(enemy1_row)
+ 712  1000   183                                      OR      A
+ 713  1001    40  19                               JR      Z,e1_bnc_dn     ; at top -> bounce down
+ 714  1003    61                                      DEC     A
+ 715  1004    50  28 246                        LD      (enemy1_row),A
+ 716  1007    24  89                               JR      enemy1_draw
+ 717  03F1
+ 718  03F1              e1_down:
+ 719  1009    58  28 246                        LD      A,(enemy1_row)
+ 720  1012   254  56                               CP      MAX_ROW
+ 721  1014    40  18                               JR      Z,e1_bnc_up     ; at bottom -> bounce up
+ 722  1016    60                                      INC     A
+ 723  1017    50  28 246                        LD      (enemy1_row),A
+ 724  1020    24  76                               JR      enemy1_draw
+ 725  03FE
+ 726  03FE              e1_bnc_dn:
+ 727  1022    62   1                               LD      A,1
+ 728  1024    50  28 246                        LD      (enemy1_row),A
+ 729  1027    62   1                               LD      A,1
+ 730  1029    50  39 246                        LD      (enemy1_dy),A
+ 731  1032    24  64                               JR      enemy1_draw
+ 732  040A
+ 733  040A              e1_bnc_up:
+ 734  1034    62  55                               LD      A,MAX_ROW-1
+ 735  1036    50  28 246                        LD      (enemy1_row),A
+ 736  1039    62 255                               LD      A,0FFH
+ 737  1041    50  39 246                        LD      (enemy1_dy),A
+ 738  1044    24  52                               JR      enemy1_draw
+ 739  0416
+ 740  0416              enemy1_deact:
+ 741  1046   175                                      XOR     A
+ 742  1047    50  29 246                        LD      (enemy1_active),A
+ 743  1050    24  65                               JR      after_enemy1
+ 744  041C
+ 745  041C              enemy1_spawn:
+ 746  041C                              ; Pseudo-random spawn: seed += 23, mask to 0-56 range
+ 747  1052    58  23 246                        LD      A,(rng_seed)
+ 748  1055   198  23                               ADD     A,17H
+ 749  1057    50  23 246                        LD      (rng_seed),A
+ 750  1060   230  56                               AND     38H             ; 0, 8, 16, 24, 32, 40, 48, 56
+ 751  1062    50  28 246                        LD      (enemy1_row),A
+ 752  1065    62  29                               LD      A,MAX_COL
+ 753  1067    50  27 246                        LD      (enemy1_col),A
+ 754  1070    62   1                               LD      A,1
+ 755  1072    50  29 246                        LD      (enemy1_active),A
+ 756  1075   175                                      XOR     A
+ 757  1076    50  30 246                        LD      (enemy1_phase),A
+ 758  0437                              ; set initial direction from seed bit 0
+ 759  1079    58  23 246                        LD      A,(rng_seed)
+ 760  1082   230   1                               AND     01H
+ 761  1084    40   7                               JR      Z,e1_spwn_up
+ 762  1086    62   1                               LD      A,1
+ 763  1088    50  39 246                        LD      (enemy1_dy),A
+ 764  1091    24   5                               JR      enemy1_draw
+ 765  0445              e1_spwn_up:
+ 766  1093    62 255                               LD      A,0FFH
+ 767  1095    50  39 246                        LD      (enemy1_dy),A
+ 768  044A
+ 769  044A              enemy1_draw:
+ 770  1098    58  27 246                        LD      A,(enemy1_col)
+ 771  1101    71                                      LD      B,A
+ 772  1102    58  28 246                        LD      A,(enemy1_row)
+ 773  1105    72                                      LD      C,B
+ 774  1106   205  88   5                        CALL    calc_vram
+ 775  1109    33  31 246                        LD      HL,enemy_sprite
+ 776  1112     6   8                               LD      B,ENEMY_HEIGHT
+ 777  1114   205  62   5                        CALL    draw_sprite
+ 778  045D
+ 779  045D              after_enemy1:
+ 780  045D
+ 781  045D              ; ============================================================
+ 782  045D              ;  ENEMY 2 UPDATE (wave guard: only when wave=1)
+ 783  045D              ; ============================================================
+ 784  1117    58  46 246                        LD      A,(wave)
+ 785  1120   183                                      OR      A
+ 786  1121   202  15   5                        JP      Z,after_enemy2  ; wave=0 -> skip enemy2
+ 787  0464
+ 788  1124    58  42 246                        LD      A,(enemy2_active)
+ 789  1127   183                                      OR      A
+ 790  1128    40 100                               JR      Z,enemy2_spawn
+ 791  046A
+ 792  046A                              ; --- Erase at current position ---
+ 793  1130    58  40 246                        LD      A,(enemy2_col)
+ 794  1133    71                                      LD      B,A
+ 795  1134    58  41 246                        LD      A,(enemy2_row)
+ 796  1137    72                                      LD      C,B
+ 797  1138   205  88   5                        CALL    calc_vram
+ 798  1141     6   8                               LD      B,ENEMY_HEIGHT
+ 799  1143   205  47   5                        CALL    erase_rows
+ 800  047A
+ 801  047A                              ; --- Phase counter ---
+ 802  1146    58  43 246                        LD      A,(enemy2_phase)
+ 803  1149    60                                      INC     A
+ 804  1150   230   3                               AND     03H
+ 805  1152    50  43 246                        LD      (enemy2_phase),A
+ 806  1155   183                                      OR      A
+ 807  1156    32 118                               JR      NZ,enemy2_draw
+ 808  0486
+ 809  0486                              ; --- Horizontal move left ---
+ 810  1158    58  40 246                        LD      A,(enemy2_col)
+ 811  1161   183                                      OR      A
+ 812  1162    40  60                               JR      Z,enemy2_deact
+ 813  1164    61                                      DEC     A
+ 814  1165    50  40 246                        LD      (enemy2_col),A
+ 815  0490
+ 816  0490                              ; --- Vertical: check direction ---
+ 817  1168    58  44 246                        LD      A,(enemy2_dy)
+ 818  1171   254   1                               CP      01H
+ 819  1173    40  12                               JR      Z,e2_down
+ 820  0497
+ 821  0497                              ; --- Moving up ---
+ 822  1175    58  41 246                        LD      A,(enemy2_row)
+ 823  1178   183                                      OR      A
+ 824  1179    40  19                               JR      Z,e2_bnc_dn
+ 825  1181    61                                      DEC     A
+ 826  1182    50  41 246                        LD      (enemy2_row),A
+ 827  1185    24  89                               JR      enemy2_draw
+ 828  04A3
+ 829  04A3              e2_down:
+ 830  1187    58  41 246                        LD      A,(enemy2_row)
+ 831  1190   254  56                               CP      MAX_ROW
+ 832  1192    40  18                               JR      Z,e2_bnc_up
+ 833  1194    60                                      INC     A
+ 834  1195    50  41 246                        LD      (enemy2_row),A
+ 835  1198    24  76                               JR      enemy2_draw
+ 836  04B0
+ 837  04B0              e2_bnc_dn:
+ 838  1200    62   1                               LD      A,1
+ 839  1202    50  41 246                        LD      (enemy2_row),A
+ 840  1205    62   1                               LD      A,1
+ 841  1207    50  44 246                        LD      (enemy2_dy),A
+ 842  1210    24  64                               JR      enemy2_draw
+ 843  04BC
+ 844  04BC              e2_bnc_up:
+ 845  1212    62  55                               LD      A,MAX_ROW-1
+ 846  1214    50  41 246                        LD      (enemy2_row),A
+ 847  1217    62 255                               LD      A,0FFH
+ 848  1219    50  44 246                        LD      (enemy2_dy),A
+ 849  1222    24  52                               JR      enemy2_draw
+ 850  04C8
+ 851  04C8              enemy2_deact:
+ 852  1224   175                                      XOR     A
+ 853  1225    50  42 246                        LD      (enemy2_active),A
+ 854  1228    24  65                               JR      after_enemy2
+ 855  04CE
+ 856  04CE              enemy2_spawn:
+ 857  04CE                              ; seed += 29
+ 858  1230    58  23 246                        LD      A,(rng_seed)
+ 859  1233   198  29                               ADD     A,1DH
+ 860  1235    50  23 246                        LD      (rng_seed),A
+ 861  1238   230  56                               AND     38H
+ 862  1240    50  41 246                        LD      (enemy2_row),A
+ 863  1243    62  25                               LD      A,MAX_COL-4     ; spawn offset from enemy1
+ 864  1245    50  40 246                        LD      (enemy2_col),A
+ 865  1248    62   1                               LD      A,1
+ 866  1250    50  42 246                        LD      (enemy2_active),A
+ 867  1253   175                                      XOR     A
+ 868  1254    50  43 246                        LD      (enemy2_phase),A
+ 869  1257    58  23 246                        LD      A,(rng_seed)
+ 870  1260   230   1                               AND     01H
+ 871  1262    40   7                               JR      Z,e2_spwn_up
+ 872  1264    62   1                               LD      A,1
+ 873  1266    50  44 246                        LD      (enemy2_dy),A
+ 874  1269    24   5                               JR      enemy2_draw
+ 875  04F7              e2_spwn_up:
+ 876  1271    62 255                               LD      A,0FFH
+ 877  1273    50  44 246                        LD      (enemy2_dy),A
+ 878  04FC
+ 879  04FC              enemy2_draw:
+ 880  1276    58  40 246                        LD      A,(enemy2_col)
+ 881  1279    71                                      LD      B,A
+ 882  1280    58  41 246                        LD      A,(enemy2_row)
+ 883  1283    72                                      LD      C,B
+ 884  1284   205  88   5                        CALL    calc_vram
+ 885  1287    33  31 246                        LD      HL,enemy_sprite
+ 886  1290     6   8                               LD      B,ENEMY_HEIGHT
+ 887  1292   205  62   5                        CALL    draw_sprite
+ 888  050F
+ 889  050F              after_enemy2:
+ 890  050F
+ 891  050F              ; --- Frame delay: LD HL,(frame_delay); loop DEC HL until zero ---
+ 892  1295    42  15 246                        LD      HL,(frame_delay)
+ 893  0512              delay_loop:
+ 894  1298    43                                      DEC     HL
+ 895  1299   124                                      LD      A,H
+ 896  1300   181                                      OR      L
+ 897  1301    32 251                               JR      NZ,delay_loop
+ 898  0517
+ 899  0517              ; --- End of frame: if event_code != 0, RET to BASIC for sound ---
+ 900  1303    58  57 246                        LD      A,(event_code)
+ 901  1306   183                                      OR      A
+ 902  1307   192                                      RET     NZ              ; BASIC dispatches on EV code
+ 903  051C
+ 904  1308   195  16   0                        JP      main_loop
+ 905  051F
+ 906  051F              ; ============================================================
+ 907  051F              ;  SUBROUTINES
+ 908  051F              ; ============================================================
+ 909  051F
+ 910  051F              ; hit_count_up: increment kill_count; if >= WAVE2_THRESHOLD set wave=1
+ 911  051F              hit_count_up:
+ 912  1311    58  45 246                        LD      A,(kill_count)
+ 913  1314    60                                      INC     A
+ 914  1315    50  45 246                        LD      (kill_count),A
+ 915  1318   254   5                               CP      WAVE2_THRESHOLD
+ 916  1320   216                                      RET     C               ; < threshold: return
+ 917  1321    62   1                               LD      A,1
+ 918  1323    50  46 246                        LD      (wave),A
+ 919  1326   201                                      RET
+ 920  052F
+ 921  052F              ; erase_rows: erase B rows starting at VRAM address in HL
+ 922  052F              ; Preserves B count via PUSH/POP BC.
+ 923  052F              ; On entry: HL=start VRAM addr, B=row count
+ 924  052F              erase_rows:
+ 925  1327   197                                      PUSH    BC
+ 926  1328   205 107   5                        CALL    set_cursor
+ 927  1331   175                                      XOR     A
+ 928  1332   205 134   5                        CALL    write_byte
+ 929  1335   205  80   5                        CALL    next_row
+ 930  1338   193                                      POP     BC
+ 931  1339    16 242                               DJNZ    erase_rows
+ 932  1341   201                                      RET
+ 933  053E
+ 934  053E              ; draw_sprite: draw B rows from (HL) at VRAM address in HL (outer), sprite in HL (inner)
+ 935  053E              ; On entry: HL=VRAM address (from calc_vram), HL also sprite pointer
+ 936  053E              ; Note: on entry HL = calc_vram result (VRAM address); sprite pointer passed separately
+ 937  053E              ; Actual call pattern: CALL calc_vram; LD HL,sprite_ptr; LD B,rows; CALL draw_sprite
+ 938  053E              ; HL = sprite data pointer. set_cursor uses DE as VRAM addr (set by calc_vram via EB).
+ 939  053E              draw_sprite:
+ 940  1342   197                                      PUSH    BC
+ 941  1343   205 107   5                        CALL    set_cursor
+ 942  1346   126                                      LD      A,(HL)
+ 943  1347    35                                      INC     HL
+ 944  1348   205 134   5                        CALL    write_byte
+ 945  1351   229                                      PUSH    HL
+ 946  1352   205  80   5                        CALL    next_row
+ 947  1355   225                                      POP     HL
+ 948  1356   193                                      POP     BC
+ 949  1357    16 239                               DJNZ    draw_sprite
+ 950  1359   201                                      RET
+ 951  0550
+ 952  0550              ; next_row: advance DE (VRAM address) by 30 (one pixel row = 30 bytes wide)
+ 953  0550              ; On entry: DE = current VRAM address
+ 954  0550              ; On exit:  DE = address of next row (DE + 30)
+ 955  0550              next_row:
+ 956  1360    98                                      LD      H,D
+ 957  1361   107                                      LD      L,E
+ 958  1362    17  30   0                        LD      DE,001EH        ; 30 decimal
+ 959  1365    25                                      ADD     HL,DE
+ 960  1366   235                                      EX      DE,HL
+ 961  1367   201                                      RET
+ 962  0558
+ 963  0558              ; calc_vram: calculate VRAM byte address from row A and column C
+ 964  0558              ; Formula: addr = C + (A * 30) ; because each row = 30 bytes
+ 965  0558              ; On entry: A=row (0-63), C=column (0-29)
+ 966  0558              ; On exit:  DE=VRAM address (0-1919)
+ 967  0558              ; Method: addr = C + A*30 = C + A*(32-2) = C + A*32 - A*2
+ 968  0558              ;         = C + (A<<5) - (A<<1)
+ 969  0558              ;         HL = A*1 = A; HL = A*2 (<<1); push; HL = A*4; *8; *16; *32;
+ 970  0558              ;         pop A*2; HL = A*32 - A*2 = A*30; add C -> HL = A*30+C
+ 971  0558              calc_vram:
+ 972  1368   111                                      LD      L,A             ; HL = A (row)
+ 973  1369    38   0                               LD      H,00H
+ 974  1371    41                                      ADD     HL,HL           ; HL = A*2
+ 975  1372   229                                      PUSH    HL              ; save A*2
+ 976  1373    41                                      ADD     HL,HL           ; HL = A*4
+ 977  1374    41                                      ADD     HL,HL           ; HL = A*8
+ 978  1375    41                                      ADD     HL,HL           ; HL = A*16
+ 979  1376    41                                      ADD     HL,HL           ; HL = A*32
+ 980  1377   209                                      POP     DE              ; DE = A*2
+ 981  1378   183                                      OR      A               ; clear carry
+ 982  1379   237  82                               SBC     HL,DE           ; HL = A*30
+ 983  1381    89                                      LD      E,C             ; E = col
+ 984  1382    22   0                               LD      D,00H
+ 985  1384    25                                      ADD     HL,DE           ; HL = A*30 + col
+ 986  1385   235                                      EX      DE,HL           ; DE = VRAM address
+ 987  1386   201                                      RET
+ 988  056B
+ 989  056B              ; set_cursor: set HD61830 cursor to VRAM address in DE
+ 990  056B              ; Commands: 0AH (set cursor low byte), 0BH (set cursor high byte)
+ 991  056B              ; LCD port 21H=command, 20H=data
+ 992  056B              set_cursor:
+ 993  1387   205 149   5                        CALL    wait_busy
+ 994  1390    62  10                               LD      A,0AH           ; Set Cursor Address (low)
+ 995  1392   211  33                               OUT     (LCD_CMD),A
+ 996  1394   205 149   5                        CALL    wait_busy
+ 997  1397   123                                      LD      A,E             ; low byte of address
+ 998  1398   211  32                               OUT     (LCD_DATA),A
+ 999  1400   205 149   5                        CALL    wait_busy
+1000  1403    62  11                               LD      A,0BH           ; Set Cursor Address (high)
+1001  1405   211  33                               OUT     (LCD_CMD),A
+1002  1407   205 149   5                        CALL    wait_busy
+1003  1410   122                                      LD      A,D             ; high byte of address
+1004  1411   211  32                               OUT     (LCD_DATA),A
+1005  1413   201                                      RET
+1006  0586
+1007  0586              ; write_byte: write A to HD61830 display RAM at current cursor
+1008  0586              ; Command: 0CH (Write Display RAM; cursor auto-increments)
+1009  0586              write_byte:
+1010  1414   245                                      PUSH    AF
+1011  1415   205 149   5                        CALL    wait_busy
+1012  1418    62  12                               LD      A,0CH           ; Write Display RAM
+1013  1420   211  33                               OUT     (LCD_CMD),A
+1014  1422   205 149   5                        CALL    wait_busy
+1015  1425   241                                      POP     AF
+1016  1426   211  32                               OUT     (LCD_DATA),A
+1017  1428   201                                      RET
+1018  0595
+1019  0595              ; wait_busy: poll HD61830 status on port 21H until not busy
+1020  0595              ; Bit 7 of status = busy flag (1=busy). RLCA shifts bit7 into carry.
+1021  0595              wait_busy:
+1022  1429   219  33                               IN      A,(LCD_CMD)     ; read status
+1023  1431     7                                      RLCA                    ; bit7 -> carry
+1024  1432    56 251                               JR      C,wait_busy     ; carry set -> busy, loop
+1025  1434   201                                      RET
+1026  059B
+# file closed: DEFEND.asm

@@ -552,6 +552,35 @@ test. Mark hit objects inactive and erase them. Only active objects are drawn ea
 **Never use VRAM readback (`CMD_READ`, port 3EH) for collision.** Store the bounding
 rectangle of each object in the parameter block and compare positions arithmetically.
 
+### Event code / early-RET — inter-frame BASIC dispatch
+
+For events that require BASIC-side handling (sound, score updates, death sequences), the
+MC can signal BASIC by writing an **event code byte** to a known parameter-block address
+and then returning early (`RET NZ`) before the normal end-of-frame `RET`.
+
+```z80
+; At any point in the frame loop where a sound event occurs:
+    LD   A,1              ; event_code: 1=laser, 2=explosion, 3=death
+    LD   (event_code),A   ; write to param block
+    RET  NZ               ; return early; A is NZ so BASIC knows something happened
+```
+
+BASIC detects the early return, reads `event_code`, calls the appropriate routine
+(e.g. `SOUND`), clears the event byte, then loops back into MC:
+
+```basic
+65 Z=CALL(AD)
+66 IF PEEK(player_dead)=1 THEN GOTO 80
+67 EV=PEEK(event_code):IF EV=0 THEN GOTO 100   ' no event → exit check
+68 POKE event_code,0:ON EV GOSUB 200,210,220:GOTO 65
+```
+
+This gives BASIC-quality sound (via `SOUND`) between MC frames without adding a sound
+routine to the MC itself. The MC renders a complete frame and sets the cursor — BASIC
+services the event, then re-enters MC which immediately starts the next erase pass.
+
+**Used by:** DefendERR (`DefDat1.BAS`) — see [DefendERR/DEFEND_ASM/ASM_README.md](DefendERR/DEFEND_ASM/ASM_README.md).
+
 ### Frame rate
 
 The delay loop count controls frame rate directly. Higher count = slower animation.
@@ -570,6 +599,7 @@ gives maximum speed (limited only by I/O overhead of the erase/draw passes).
 | `BOUNCE.BAS` | `Progs/Animation/` | MC wave-motion sprite: ball follows a sine wave lookup table embedded in MC. `calc_vram` using row×32−row×2 trick |
 | `BOUNCE2.BAS` | `Progs/Animation/` | Two independent wave-motion sprites moving in opposite directions |
 | `PONGGAME.BAS` | `Progs/pong/` | Full game: PSET draws static net, MC handles ball + paddle with collision. Position-independent MC via `VARPTR`/`DIM` with runtime patch loop. `draw_rows`/`erase_rows`/`next_row` helpers |
+| `DefDat1.BAS` | `Progs/DefendERR/` | Full scrolling-shooter game: 1435-byte MC engine, 118 runtime patches, starfield, multiple enemies with active/inactive state, bounding-box collision, event_code early-RET for BASIC sound dispatch, two-stage lives/wave progression. See [DefendERR/README.md](DefendERR/README.md) |
 
 ---
 
@@ -603,9 +633,11 @@ gives maximum speed (limited only by I/O overhead of the erase/draw passes).
 
 ## References
 
-- `HARDWARE_README.md` — hardware overview including HD61830 command table
+- `HARDWARE_README.md` — hardware overview including HD61830 command table - in development
 - `Progs/image_writer/IMGMC_ASM/IMGMC.asm` — MC blast routine source
 - `Progs/image_writer/IMGMC_ASM/ASM_README.md` — MC blast assembly notes
 - `Progs/Animation/gen_sprite.py`, `gen_bounce.py`, `gen_bounce2.py` — MC subroutine source (set_cursor, write_byte, calc_vram)
 - `Progs/pong/gen_ponggame.py` — position-independent MC, VARPTR method, draw_rows/erase_rows
-- Hitachi LM200 LCD module datasheet: `Docs/Hardware/LM200-Hitachi_copy.pdf` (gitignored — local copy only)
+- `Progs/DefendERR/gen_defdat1.py` — full game MC: all subroutines, event_code dispatch, multi-sprite HUD, bounding-box collision
+- `Progs/DefendERR/DEFEND_ASM/ASM_README.md` — DefendERR MC technical notes: param block, key techniques, assembler workflow
+- Hitachi LM200 LCD module datasheet

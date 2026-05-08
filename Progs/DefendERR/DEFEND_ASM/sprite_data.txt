@@ -1,0 +1,118 @@
+; sprite_data.txt - Sprite and visual data for DEFEND (DefDat1)
+; By Kayto April/May 2026
+; Licensed under the MIT License. See LICENSE file for details.
+;
+; The HD61830 display is 240x64 pixels.
+; Each VRAM byte = 8 horizontal pixels in one display row.
+; One display column = 1 VRAM byte wide. Each row is 30 bytes wide.
+; Sprites are drawn 1 byte per row, advancing VRAM by 30 each row.
+; Bit 7 = leftmost pixel, Bit 0 = rightmost pixel.
+;
+; Sprites are stored in the param block at PARAM_BASE (F605H = 62981).
+; Set by BASIC POKE lines in DefDat1.BAS before CALL(AD).
+
+; ============================================================
+; SHIP SPRITE  (8 bytes at PARAM_BASE+2..+9 = 62983-62990)
+; 1 byte wide, 8 rows tall  (8 x 8 pixels on screen)
+; Drawn at column SHIP_COL = 2
+; ============================================================
+;
+; Bytes: 01H  07H  1FH  FFH  FFH  1FH  07H  01H
+; Dec:    1    7   31  255  255   31    7    1
+;
+; Row  Hex   Bits          Visual (X=on, .=off)
+;  0   01H   0000 0001     . . . . . . . X
+;  1   07H   0000 0111     . . . . . X X X
+;  2   1FH   0001 1111     . . . X X X X X
+;  3   FFH   1111 1111     X X X X X X X X
+;  4   FFH   1111 1111     X X X X X X X X
+;  5   1FH   0001 1111     . . . X X X X X
+;  6   07H   0000 0111     . . . . . X X X
+;  7   01H   0000 0001     . . . . . . . X
+;
+; Shape: right-pointing arrowhead / delta wing
+
+; ============================================================
+; ENEMY SPRITE  (8 bytes at PARAM_BASE+26..+33 = 63007-63014)
+; 1 byte wide, 8 rows tall  (8 x 8 pixels on screen)
+; Shared between enemy 1 and enemy 2
+; ============================================================
+;
+; Bytes: 1CH  A0H  3EH  F1H  F1H  3EH  A0H  1CH
+; Dec:   28  160   62  241  241   62  160   28
+;
+; Row  Hex   Bits          Visual (X=on, .=off)
+;  0   1CH   0001 1100     . . . X X X . .
+;  1   A0H   1010 0000     X . X . . . . .
+;  2   3EH   0011 1110     . . X X X X X .
+;  3   F1H   1111 0001     X X X X . . . X
+;  4   F1H   1111 0001     X X X X . . . X
+;  5   3EH   0011 1110     . . X X X X X .
+;  6   A0H   1010 0000     X . X . . . . .
+;  7   1CH   0001 1100     . . . X X X . .
+;
+; Shape: alien saucer with wings
+
+; ============================================================
+; HEART SPRITE  (8 bytes at PARAM_BASE+44..+51 = 63025-63032)
+; Drawn in three positions (rows 0, 8, 16) at column 0 (HEART_COL)
+; Represents the 3 lives. Erased when corresponding life is lost.
+; ============================================================
+;
+; Bytes: 36H  7EH  7EH  3CH  18H  10H  00H  00H
+; Dec:   54  126  126   60   24   16    0    0
+;
+; Row  Hex   Bits          Visual (X=on, .=off)
+;  0   36H   0011 0110     . . X X . X X .
+;  1   7EH   0111 1110     . X X X X X X .
+;  2   7EH   0111 1110     . X X X X X X .
+;  3   3CH   0011 1100     . . X X X X . .
+;  4   18H   0001 1000     . . . X X . . .
+;  5   10H   0001 0000     . . . X . . . .
+;  6   00H   0000 0000     . . . . . . . .
+;  7   00H   0000 0000     . . . . . . . .
+;
+; Shape: downward-pointing heart
+; Lives layout: heart 2 (row 0), heart 1 (row 8), heart 0 (row 16)
+; All three visible at start; erased as lives are lost.
+;
+; Heart addresses:
+;   heart_sprite = PARAM_BASE+44 = 63025
+;   POKE 63025..63032 : 54 126 126 60 24 16 0 0
+
+; ============================================================
+; STAR PARTICLE DATA (constants, not stored in param block)
+; ============================================================
+;
+; Each star = 2 pixels tall (top byte + bottom byte)
+; STAR_BYTE_TOP = 03H = 0000 0011  → . . . . . . X X
+; STAR_BYTE_BOT = 01H = 0000 0001  → . . . . . . . X
+; Stars scroll left each frame; wrap at col 0 with RNG-based new row.
+; RNG update: seed = (seed + 11H) & 3EH  → rows 0,2,4,...62 (even only)
+; Initial positions set by POKE (lines 27-30 in DefDat1.BAS):
+;   star1: col=27, row=10
+;   star2: col=12, row=42
+;   star3: col=21, row=26
+
+; ============================================================
+; LASER BOLT DATA (constants, not stored in param block)
+; ============================================================
+;
+; Each bolt = 2 pixels tall (top byte + bottom byte)
+; SHOT_BYTE_TOP = 3CH = 0011 1100  → . . X X X X . .
+; SHOT_BYTE_BOT = 3CH = 0011 1100  → . . X X X X . .
+; Bolt fires at col SHIP_COL+1=3, centred vertically on ship (row+3).
+; Advances right one column per frame; disappears at MAX_COL=29.
+
+; ============================================================
+; FRAME DELAY
+; ============================================================
+;
+; frame_delay = PARAM_BASE+10 (two bytes, little-endian)
+; Set by POKE 62991,136 : POKE 62992,19  → 136 + 19*256 = 4992? 
+; Wait: 19*256 + 136 = 4872+136 = 5008? No: 19*256=4864, 4864+136=5000 → 5000 ✓
+; FRAME_DELAY = 5000 = 1388H  (lo=88H=136, hi=13H=19)
+; Main loop decrements HL in a tight loop until zero.
+; At 4MHz Z80, DEC HL + LD A,H + OR L + JR NZ = ~7 T-states per loop
+; 5000 iterations ≈ 35000 T-states ≈ 8.75ms per frame ≈ ~114fps
+; (actual speed lower due to LCD I/O wait states and display logic)

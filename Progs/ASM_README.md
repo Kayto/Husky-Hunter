@@ -18,6 +18,7 @@ For ease of `.BAS` creation and parameter adjustment during development various 
 | `machine_code/COLLATMC.asm` | `COLLATMC.BAS` | 33 |
 | `pong/PONGGAME_ASM/PONGGAME.asm` | `PONGGAME.BAS` | 451 |
 | `Sound/SND4_ASM/SND4.asm` | `SND4.BAS` | 35 |
+| `DefendERR/DEFEND_ASM/DEFEND.asm` | `DefDat1.BAS` | 1435 |
 
 
 ## Two Loader Patterns
@@ -46,7 +47,7 @@ real address. The raw output bytes are exactly the DATA values in the BASIC
 program.
 
 ### DIM/VARPTR string array (`ORG 0000H`)
-Used by: PONGGAME only
+Used by: PONGGAME, DEFENDER
 
 BASIC allocates a string array, takes its address, and POKEs the code there:
 
@@ -61,6 +62,10 @@ Because the load address is not known at assembly time, the code is assembled
 with `ORG 0000H`. All internal `CALL`/`JP` targets in the assembled binary are
 offsets from zero. BASIC calculates the real load address at runtime and patches
 every target before calling the code.
+
+**PONGGAME** — 33 patch offsets, 451 bytes. See [pong/PONGGAME_ASM/ASM_README.md](pong/PONGGAME_ASM/ASM_README.md).
+
+**DEFENDER (DefendERR)** — 118 patch offsets, 1435 bytes; same pattern at larger scale. See [DefendERR/DEFEND_ASM/ASM_README.md](DefendERR/DEFEND_ASM/ASM_README.md).
 
 > **Note:** `CALL 0005H` (CP/M BDOS entry point) in PONGGAME is **not** patched
 > — `0005H` is the real CP/M BDOS vector and is always valid.
@@ -157,3 +162,4 @@ If you dont understand the above, take a look at the following to give some work
 | PONG | 199 | Diagonal bounce, signed delta bytes, NEG direction reversal; `sprite_data.txt` included | [Animation/PONG_ASM/ASM_README.md](Animation/PONG_ASM/ASM_README.md) |
 | PONGGAME | 451 | DIM/VARPTR loader, runtime CALL/JP patching (33 offsets), full paddle game; `sprite_data.txt` included | [pong/PONGGAME_ASM/ASM_README.md](pong/PONGGAME_ASM/ASM_README.md) |
 | SND4 | 35 | Port 86H bit-bang sound; POKE pitch/duration params then CALL; ROM-verified, confirmed working on hardware | [Sound/SND4_ASM/ASM_README.md](Sound/SND4_ASM/ASM_README.md) |
+| DefendERR | 1435 | DIM/VARPTR loader, runtime CALL/JP patching (118 offsets), full scrolling shooter; Python generator cross-checks bytes; `sprite_data.txt` included | [DefendERR/DEFEND_ASM/ASM_README.md](DefendERR/DEFEND_ASM/ASM_README.md) |
