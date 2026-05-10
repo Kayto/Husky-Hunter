@@ -1,8 +1,35 @@
 # Husky Hunter — Programs for the 1983 Ruggedised Field Computer
 
+### Latest News and Updates
+
+**In Progress**
+
+* Two player Pong.
+\- Second computer player and score added. Some serious optimisations needed to reduce reliance on BASIC and associated overhead to make this faster!
+
+* Two player Pong via serial.
+\- Two serial connected Hunters to play a single game together\. Currently testing via real Hunter to MAME Hunter and via a Serial bridge that mimics player 2. But relies on a faster optimised two player Pong to be useable\.
+
+**09 May 2026  - New Repo for Emulator**
+
+* Hunter Emulation fixes and Build scripts complete (based on existing MAME) - ready to share working emulator and patches but looking for testers.
+\- Serial and HCOM working allowing file transfer and Terminal emulator connections fully in emulation. Progs provided here, those tested, seem to work ok\.
+
+**09 May 2026**
+
+* DefendERR - Code and source ASM shared.
+
+**02 May 2026**
+
+* Added Sound demos and SND4 machine code implementation.
+
+- - -
+
+## Introduction
+
 Programs and tools for the **Husky Hunter** portable computer (NSC800-4 @ 4MHz, DEMOS 2.2 / CP/M 2.2, 240×64 LCD).
 
-The focus for this repo is on Hunter BASIC (rather than the CP/M support) for the following reasons.
+The focus for this repo is generally on Hunter BASIC (rather than the CP/M support) for the following reasons.
 
 * Pixel level control of the LCD screen.
 * Some interesting capability for sub routine links between BASIC and BDOS/Z80 Machine Code (rather than the more typical single shot loaders).
