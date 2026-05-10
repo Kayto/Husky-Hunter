@@ -9,14 +9,14 @@
 * Two player Pong.
 \- Second computer player and score added\. Some serious optimisations needed to reduce reliance on BASIC and associated overhead to make this faster\!
 * Two player Pong via serial.
-* \- Two serial connected Hunters to play a single game together\. Currently testing via real Hunter to MAME Hunter and via a Serial bridge that mimics player 2\. But relies on a faster optimised two player Pong to be useable\.
-
+\- Two serial connected Hunters to play a single game together\. Currently testing via real Hunter to MAME Hunter and via a Serial bridge that mimics player 2\. But relies on a faster optimised two player Pong to be useable\.
 - - -
 
 **09 May 2026  - New Repo for Emulator**
 
-* Hunter Emulation fixes and Build scripts complete (based on existing MAME) - ready to share working emulator and patches but looking for testers.
-* \- Serial and HCOM working allowing file transfer and Terminal emulator connections fully in emulation\. Progs provided here\, those tested\, seem to work ok\.
+* Hunter Emulation
+\- Fixes and Build scripts complete (based on existing MAME) - ready to share working emulator and patches but looking for testers\.
+\- Serial and HCOM working allowing file transfer and Terminal emulator connections fully in emulation. Progs provided here\, those tested\, seem to work ok\.
 
 - - -
 
