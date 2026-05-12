@@ -4,6 +4,7 @@
 ; Licensed under the MIT License. See LICENSE file for details.
 ;
 ; Compatible with sjasmplus (Intel-style H-suffix hex).
+;
 ; Assemble with base address 0. All internal CALL/JP targets are
 ; relative to start. BASIC patches them to real addresses at runtime
 ; (patch loop, lines 9-11 of DefDat1.BAS).
@@ -12,6 +13,9 @@
 ; MC stored as: DIM MC$(717,1) ; AD=VARPTR(MC$)-1
 ;               1435 bytes at AD..AD+1434
 ; Called by:   Z=CALL(AD)
+;
+; Build: sjasmplus DEFEND.asm  (generates DEFEND.lst)
+;        python asm_tools/lst_to_dlst.py DEFEND.lst > DEFEND.dlst
 ;
 ; Param block at F605H (62981) - fixed user code area:
 ;   +0         ship_row           current row of ship (0-56)

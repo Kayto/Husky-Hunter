@@ -98,6 +98,9 @@ Screenshot*.png
 # Archives
 *.7z
 
+# Comms test scripts (development, serial port specific)
+Progs/Comms/
+
 # PyInstaller build artefacts
 build/
 dist/

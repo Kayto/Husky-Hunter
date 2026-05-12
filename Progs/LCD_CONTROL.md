@@ -481,6 +481,116 @@ DELAY + KEY CHECK
 All erases must happen before any draws. This prevents visual glitches when objects are
 adjacent — you never draw one object while a neighbour is mid-erase.
 
+### Delta rendering (partial object update)
+
+When only part of a tall object changes each frame, writing the full object every frame
+wastes I/O. The **delta** technique writes only the rows that differ from the previous frame.
+
+For a paddle that moves by `PADDLE_SPEED` rows per frame:
+
+```
+old_py  = saved top row from last frame
+new_py  = current top row
+delta   = new_py - old_py  (signed, −PADDLE_SPEED to +PADDLE_SPEED)
+
+if delta > 0 (paddle moved down):
+    ERASE rows [old_py .. old_py + delta − 1]        (vacated rows at top)
+    DRAW  rows [old_py + PADDLE_HEIGHT .. new_py + PADDLE_HEIGHT − 1] (new rows at bottom)
+
+if delta < 0 (paddle moved up):
+    ERASE rows [new_py + PADDLE_HEIGHT .. old_py + PADDLE_HEIGHT − 1] (vacated rows at bottom)
+    DRAW  rows [new_py .. old_py − 1]                (new rows at top)
+
+if delta == 0: no writes needed
+```
+
+For `PADDLE_HEIGHT=12` and `PADDLE_SPEED=4`, this writes at most 8 rows (4 erase + 4 draw)
+instead of 24 (12 erase + 12 draw) — a 3× I/O reduction per paddle per frame. When the
+paddle is stationary, zero writes occur.
+
+**Exception — overlap redraw:** if the ball column equals the paddle column, the ball erase
+may have cleared paddle pixels. Force a full paddle redraw before the delta update in that
+case, then resume delta logic as normal.
+
+**Used by:** PONG2P (`Progs/pong/2P/`) — left and right paddle, both with delta updates.
+
+### Conditional UI drawing
+
+Status elements (scores, lives, wave counters) rarely change. Redrawing them every frame
+wastes 14+ LCD writes per element. Use a **dirty flag** in the parameter block:
+
+```
+score_dirty (param block byte): 0 = skip, 1 = redraw this frame
+```
+
+Set `score_dirty = 1` when a goal is scored (or a life is lost etc.). Clear it after drawing.
+
+An additional guard skips the draw even when `score_dirty=1` if the animated ball currently
+overlaps the score rows — the ball erase will blank the score region anyway, so deferring
+saves writes. Once the ball has moved clear, the next frame with `score_dirty=1` redraws.
+
+```z80
+    LD   A,(score_dirty)
+    OR   A
+    JR   Z,skip_score       ; flag clear → skip
+    LD   A,(row)
+    CP   SCORE_CLEAR_ROW    ; ball below score rows?
+    JR   C,skip_score       ; not yet → defer
+    ; draw both digit scores here
+    XOR  A
+    LD   (score_dirty),A    ; clear flag
+skip_score:
+```
+
+**Used by:** PONG2P — scores at rows 0–6, `SCORE_CLEAR_ROW = 7`.
+
+### Embedded digit font
+
+To render decimal digits (scores, lives) without BASIC `PRINT`, embed a compact bitmap font
+directly in the MC binary as a data table. For 7-row single-byte-wide digits:
+
+```
+digit_font:
+    DEFB 3CH,42H,46H,4AH,52H,62H,3CH   ; '0'
+    DEFB 10H,30H,10H,10H,10H,10H,7CH   ; '1'
+    ; ... 8 more digits ...
+```
+
+The `draw_digit` subroutine takes `A=digit (0–9)` and `C=column`, computes the font base
+address (`HL = digit_font + A × 7`), then writes 7 consecutive bytes to VRAM rows 0–6 at
+column C:
+
+```z80
+draw_digit:
+    ; A = digit 0-9, C = byte column
+    LD   B,7               ; 7 rows
+    LD   HL,digit_font
+    ADD  A,A               ; A×2
+    LD   D,A
+    ADD  A,A               ; A×4
+    ADD  A,D               ; A×6
+    ADD  A,A               ; A×7 — can't use MUL; unroll multiply
+    ; ... (or precompute offset in Python generator)
+    LD   E,A
+    LD   D,0
+    ADD  HL,DE             ; HL → first byte of digit glyph
+    XOR  A                 ; row 0
+    CALL calc_vram
+draw_digit_loop:
+    LD   A,(HL)
+    CALL set_cursor
+    CALL write_byte
+    INC  HL
+    CALL next_row
+    DJNZ draw_digit_loop
+    RET
+```
+
+The entire font occupies 70 bytes in the MC binary (10 digits × 7 bytes). Because the
+font is read-only data embedded after the code, no parameter-block space is needed.
+
+**Used by:** PONG2P — two score digits (P1 left column, P2 right column), drawn at rows 0–6.
+
 ### Collision detection
 
 Collision is checked **between UPDATE and DRAW**, using position variables — never by
@@ -598,7 +708,8 @@ gives maximum speed (limited only by I/O overhead of the erase/draw passes).
 | `SPRITE.BAS` | `Progs/Animation/` | MC sprite: byte-aligned horizontal movement, fixed row. Erase-at-old / draw-at-new pattern. Standard `set_cursor`/`write_byte`/`wait_busy` subroutines |
 | `BOUNCE.BAS` | `Progs/Animation/` | MC wave-motion sprite: ball follows a sine wave lookup table embedded in MC. `calc_vram` using row×32−row×2 trick |
 | `BOUNCE2.BAS` | `Progs/Animation/` | Two independent wave-motion sprites moving in opposite directions |
-| `PONGGAME.BAS` | `Progs/pong/` | Full game: PSET draws static net, MC handles ball + paddle with collision. Position-independent MC via `VARPTR`/`DIM` with runtime patch loop. `draw_rows`/`erase_rows`/`next_row` helpers |
+| `PONGGAME.BAS` | `Progs/pong/1P/` | Full game: PSET draws static net, MC handles ball + paddle with collision. Position-independent MC via `VARPTR`/`DIM` with runtime patch loop. `draw_rows`/`erase_rows`/`next_row` helpers |
+| `PONG2P.BAS` | `Progs/pong/2P/` | Two-player (human vs AI) pong: delta paddle rendering (only the changed rows are redrawn), conditional score draws (7-row digit font in MC, only redrawn on miss or ball overlap), AI paddle tracking with dead-zone, 906-byte MC, 51 runtime patches |
 | `DefDat1.BAS` | `Progs/DefendERR/` | Full scrolling-shooter game: 1435-byte MC engine, 118 runtime patches, starfield, multiple enemies with active/inactive state, bounding-box collision, event_code early-RET for BASIC sound dispatch, two-stage lives/wave progression. See [DefendERR/README.md](DefendERR/README.md) |
 
 ---
@@ -637,7 +748,8 @@ gives maximum speed (limited only by I/O overhead of the erase/draw passes).
 - `Progs/image_writer/IMGMC_ASM/IMGMC.asm` — MC blast routine source
 - `Progs/image_writer/IMGMC_ASM/ASM_README.md` — MC blast assembly notes
 - `Progs/Animation/gen_sprite.py`, `gen_bounce.py`, `gen_bounce2.py` — MC subroutine source (set_cursor, write_byte, calc_vram)
-- `Progs/pong/gen_ponggame.py` — position-independent MC, VARPTR method, draw_rows/erase_rows
+- `Progs/pong/1P/gen_ponggame.py` — position-independent MC, VARPTR method, draw_rows/erase_rows
+- `Progs/pong/2P/gen_pong2P.py` — PONG2P MC: delta paddle update, conditional digit scoring, AI tracking
 - `Progs/DefendERR/gen_defdat1.py` — full game MC: all subroutines, event_code dispatch, multi-sprite HUD, bounding-box collision
 - `Progs/DefendERR/DEFEND_ASM/ASM_README.md` — DefendERR MC technical notes: param block, key techniques, assembler workflow
 - Hitachi LM200 LCD module datasheet

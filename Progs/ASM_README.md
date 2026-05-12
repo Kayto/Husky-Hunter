@@ -16,7 +16,8 @@ For ease of `.BAS` creation and parameter adjustment during development various 
 | `Animation/PONG.asm` | `PONG.BAS` | 199 |
 | `image_writer/IMGMC.asm` | `IMGMC.BAS` | 30 |
 | `machine_code/COLLATMC.asm` | `COLLATMC.BAS` | 33 |
-| `pong/PONGGAME_ASM/PONGGAME.asm` | `PONGGAME.BAS` | 451 |
+| `pong/1P/PONGGAME_ASM/PONGGAME.asm` | `PONGGAME.BAS` | 451 |
+| `pong/2P/PONG2P_ASM/PONG2P.asm` | `PONG2P.BAS` | 906 |
 | `Sound/SND4_ASM/SND4.asm` | `SND4.BAS` | 35 |
 | `DefendERR/DEFEND_ASM/DEFEND.asm` | `DefDat1.BAS` | 1435 |
 
@@ -63,7 +64,9 @@ with `ORG 0000H`. All internal `CALL`/`JP` targets in the assembled binary are
 offsets from zero. BASIC calculates the real load address at runtime and patches
 every target before calling the code.
 
-**PONGGAME** — 33 patch offsets, 451 bytes. See [pong/PONGGAME_ASM/ASM_README.md](pong/PONGGAME_ASM/ASM_README.md).
+**PONGGAME** — 33 patch offsets, 451 bytes. See [pong/1P/PONGGAME_ASM/ASM_README.md](pong/1P/PONGGAME_ASM/ASM_README.md).
+
+**PONG2P** — 51 patch offsets, 906 bytes. Human vs AI, delta paddle rendering, inline 7-row digit font, AI tracking. See [pong/2P/PONG2P_ASM/ASM_README.md](pong/2P/PONG2P_ASM/ASM_README.md).
 
 **DEFENDER (DefendERR)** — 118 patch offsets, 1435 bytes; same pattern at larger scale. See [DefendERR/DEFEND_ASM/ASM_README.md](DefendERR/DEFEND_ASM/ASM_README.md).
 
@@ -160,6 +163,7 @@ If you dont understand the above, take a look at the following to give some work
 | BOUNCE | 188 | Parameter block, wave table, BDOS call, two DATA sections (MC + wave); `sprite_data.txt` included | [Animation/BOUNCE_ASM/ASM_README.md](Animation/BOUNCE_ASM/ASM_README.md) |
 | BOUNCE2 | 242 | Two sprites, shared erase_at subroutine, opposing directions; `sprite_data.txt` included | [Animation/BOUNCE2_ASM/ASM_README.md](Animation/BOUNCE2_ASM/ASM_README.md) |
 | PONG | 199 | Diagonal bounce, signed delta bytes, NEG direction reversal; `sprite_data.txt` included | [Animation/PONG_ASM/ASM_README.md](Animation/PONG_ASM/ASM_README.md) |
-| PONGGAME | 451 | DIM/VARPTR loader, runtime CALL/JP patching (33 offsets), full paddle game; `sprite_data.txt` included | [pong/PONGGAME_ASM/ASM_README.md](pong/PONGGAME_ASM/ASM_README.md) |
+| PONGGAME | 451 | DIM/VARPTR loader, runtime CALL/JP patching (33 offsets), full paddle game; `sprite_data.txt` included | [pong/1P/PONGGAME_ASM/ASM_README.md](pong/1P/PONGGAME_ASM/ASM_README.md) |
+| PONG2P | 906 | DIM/VARPTR loader, runtime CALL/JP patching (51 offsets), human vs AI with scoring; delta paddle rendering; inline 7-row digit font; AI dead-zone tracking; `sprite_data.txt` included | [pong/2P/PONG2P_ASM/ASM_README.md](pong/2P/PONG2P_ASM/ASM_README.md) |
 | SND4 | 35 | Port 86H bit-bang sound; POKE pitch/duration params then CALL; ROM-verified, confirmed working on hardware | [Sound/SND4_ASM/ASM_README.md](Sound/SND4_ASM/ASM_README.md) |
 | DefendERR | 1435 | DIM/VARPTR loader, runtime CALL/JP patching (118 offsets), full scrolling shooter; Python generator cross-checks bytes; `sprite_data.txt` included | [DefendERR/DEFEND_ASM/ASM_README.md](DefendERR/DEFEND_ASM/ASM_README.md) |

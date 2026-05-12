@@ -1,0 +1,44 @@
+; sprite_data.txt - PONG2P ball sprite and initial parameter values
+;
+; Ball sprite (4 bytes, 1 byte per row, bit 0 = leftmost pixel of byte-column)
+; Stored at PARAM_BASE+4..+7 = F609H..F60CH = 62985..62988
+;
+;   Byte  Hex   Binary     Pattern (8 pixels, bit0 left)
+;   [0]   18H   00011000   ...##...
+;   [1]   3CH   00111100   ..####..
+;   [2]   3CH   00111100   ..####..
+;   [3]   18H   00011000   ...##...
+;
+; 4x4 diamond (two-pixel-wide sides).  Occupies 1 byte-column x 4 pixel-rows.
+;
+; Frame delay (PARAM_BASE+8..+9 = F60DH..F60EH = 62989..62990)
+;   delay_lo = 00H  (BALL_DELAY = 0, maximum speed, no extra wait loop)
+;   delay_hi = 00H
+;
+; === Initial parameter block (18 bytes at PARAM_BASE = F605H = 62981) ===
+;
+;   Offset  Address  Name         Initial  Notes
+;   +0      F605H    col          14       centre column
+;   +1      F606H    row          32       centre row
+;   +2      F607H    dx           01H      moving right
+;   +3      F608H    dy           01H      moving down
+;   +4      F609H    sprite[0]    18H      ball pattern row 0
+;   +5      F60AH    sprite[1]    3CH      ball pattern row 1
+;   +6      F60BH    sprite[2]    3CH      ball pattern row 2
+;   +7      F60CH    sprite[3]    18H      ball pattern row 3
+;   +8      F60DH    delay_lo     00H      frame delay low byte
+;   +9      F60EH    delay_hi     00H      frame delay high byte
+;   +10     F60FH    py           26       left paddle Y (0..52)
+;   +11     F610H    old_py       26       previous py (written by MC)
+;   +12     F611H    opy          26       right (AI) paddle Y (0..52)
+;   +13     F612H    old_opy      26       previous opy (written by MC)
+;   +14     F613H    miss         00H      miss flag (1=P1, 2=P2, 0=none)
+;   +15     F614H    S1           00H      player 1 score (0..9, wraps)
+;   +16     F615H    S2           00H      player 2 score (0..9, wraps)
+;   +17     F616H    score_dirty  01H      1 = redraw scores this frame
+;
+; Difficulty MEDIUM (DIFFICULTY=1):
+;   PADDLE_COL       =  4  (left paddle byte-column)
+;   RIGHT_PADDLE_COL = 25  (right paddle byte-column)
+;   PADDLE_HEIGHT    = 12  rows
+;   PADDLE_SPEED     =  4  rows per keypress / AI move

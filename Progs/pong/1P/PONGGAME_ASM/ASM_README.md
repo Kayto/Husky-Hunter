@@ -98,23 +98,11 @@ purely as a parameter block. The MC code itself lives in the DIM array at `AD`.
 ## Assembling
 
 ```
-Assembler\sjasmplus-1.22.0.win\sjasmplus.exe --raw=PONGGAME.bin --lst=PONGGAME_ASM\PONGGAME.lst Progs\pong\PONGGAME_ASM\PONGGAME.asm
-python Dev\asm_tools\lst_to_dlst.py PONGGAME_ASM\PONGGAME.lst
+Assembler\sjasmplus-1.22.0.win\sjasmplus.exe --lst=PONGGAME_ASM\PONGGAME.lst Progs\pong\1P\PONGGAME_ASM\PONGGAME.asm
+python Dev\asm_tools\lst_to_dlst.py PONGGAME_ASM\PONGGAME.lst PONGGAME_ASM\PONGGAME.dlst
 ```
 
-Produces 451 bytes. Compare against BAS DATA lines 900–930:
-
-```python
-import re
-bas = open('PONGGAME.BAS').read()
-data_vals = []
-for ln in bas.splitlines():
-    m = re.match(r'^(9[0-2]\d|930) DATA (.+)', ln.strip())
-    if m:
-        data_vals += [int(x.strip()) for x in m.group(2).split(',')]
-bdata = list(open('PONGGAME.bin','rb').read())
-assert data_vals == bdata, "mismatch!"
-```
+Produces 451 bytes.
 
 ## Key Techniques
 

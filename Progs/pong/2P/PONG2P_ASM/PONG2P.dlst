@@ -1,0 +1,720 @@
+# file opened: PONG2P.asm
+  1   0000              ; PONG2P.asm - Human vs AI pong with delta paddle rendering and conditional scoring
+  2   0000              ; Z80 source equivalent of gen_pong2P.py  build_routine()
+  3   0000              ;
+  4   0000              ; Assembler: compatible with Pasmo / sjasmplus (Intel-style, H-suffix hex)
+  5   0000              ;
+  6   0000              ; MC is stored in a Husky Hunter BASIC DIM/VARPTR string array.
+  7   0000              ; BASIC loads 906 bytes from DATA lines (900-960) into MC$, then patches
+  8   0000              ; all internal CALL/JP targets to absolute addresses before CALL(AD).
+  9   0000              ; CALL 0005H (CP/M BDOS vector) is NOT patched - 0005H is always live.
+ 10   0000              ;
+ 11   0000              ; Build: sjasmplus PONG2P.asm  (generates PONG2P.lst)
+ 12   0000              ;        python asm_tools/lst_to_dlst.py PONG2P.lst > PONG2P.dlst
+ 13   0000              ;
+ 14   0000              ; ============================================================
+ 15   0000              ; Parameter block at PARAM_BASE = F605H = 62981 (18 bytes)
+ 16   0000              ;   +0  col         byte-column of ball (0..29)
+ 17   0000              ;   +1  row         pixel-row of ball (1..60)
+ 18   0000              ;   +2  dx          column delta: 01H (right) or 0FFH (left)
+ 19   0000              ;   +3  dy          row delta:    01H (down)  or 0FFH (up)
+ 20   0000              ;   +4  sprite[0]   ball pattern byte, row 0
+ 21   0000              ;   +5  sprite[1]   ball pattern byte, row 1
+ 22   0000              ;   +6  sprite[2]   ball pattern byte, row 2
+ 23   0000              ;   +7  sprite[3]   ball pattern byte, row 3
+ 24   0000              ;   +8  delay_lo    frame delay counter, low byte  (0 = max speed)
+ 25   0000              ;   +9  delay_hi    frame delay counter, high byte
+ 26   0000              ;   +10 py          left paddle top Y (0..MAX_PADDLE_Y)
+ 27   0000              ;   +11 old_py      previous py, saved each frame by MC
+ 28   0000              ;   +12 opy         right (AI) paddle top Y (0..MAX_PADDLE_Y)
+ 29   0000              ;   +13 old_opy     previous opy, saved each frame by MC
+ 30   0000              ;   +14 miss        miss flag: 00H=none, 01H=P1 missed, 02H=P2 missed
+ 31   0000              ;   +15 S1          player 1 score (0..9, wraps at 10)
+ 32   0000              ;   +16 S2          player 2 score (0..9, wraps at 10)
+ 33   0000              ;   +17 score_dirty 01H = redraw scores this frame, 00H = conditional
+ 34   0000              ; ============================================================
+ 35   0000
+ 36   0000              PARAM_BASE      EQU     0F605H
+ 37   0000
+ 38   0000              ; Game constants (DIFFICULTY = 1, medium)
+ 39   0000              PADDLE_HEIGHT   EQU     12
+ 40   0000              PADDLE_SPEED    EQU     4
+ 41   0000              PADDLE_COL      EQU     4               ; left paddle byte-column
+ 42   0000              RIGHT_PADDLE_COL EQU    25              ; right paddle byte-column
+ 43   0000              MAX_PADDLE_Y    EQU     52              ; 64 - PADDLE_HEIGHT
+ 44   0000              MAX_COL         EQU     29
+ 45   0000              MIN_ROW         EQU     1
+ 46   0000              MAX_ROW         EQU     60
+ 47   0000              NET_COL         EQU     15
+ 48   0000              NET_BYTE        EQU     18H             ; 00011000b - two centre net pixels
+ 49   0000              PADDLE_BYTE     EQU     0FFH            ; full byte (all 8 pixels)
+ 50   0000              P1_SCORE_COL    EQU     7               ; column for left-side digit
+ 51   0000              P2_SCORE_COL    EQU     22              ; column for right-side digit
+ 52   0000              SCORE_ROWS      EQU     7               ; digit font height (rows 0..6)
+ 53   0000
+ 54   0000              ; Named param addresses
+ 55   0000              col             EQU     PARAM_BASE + 0
+ 56   0000              row             EQU     PARAM_BASE + 1
+ 57   0000              dx              EQU     PARAM_BASE + 2
+ 58   0000              dy              EQU     PARAM_BASE + 3
+ 59   0000              sprite          EQU     PARAM_BASE + 4
+ 60   0000              delay_ctr       EQU     PARAM_BASE + 8
+ 61   0000              py              EQU     PARAM_BASE + 10
+ 62   0000              old_py          EQU     PARAM_BASE + 11
+ 63   0000              opy             EQU     PARAM_BASE + 12
+ 64   0000              old_opy         EQU     PARAM_BASE + 13
+ 65   0000              miss            EQU     PARAM_BASE + 14
+ 66   0000              S1              EQU     PARAM_BASE + 15
+ 67   0000              S2              EQU     PARAM_BASE + 16
+ 68   0000              score_dirty     EQU     PARAM_BASE + 17
+ 69   0000
+ 70   0000              ; NOTE: ORG 0000H here means all addresses are offsets from the base of MC$.
+ 71   0000              ; At runtime BASIC adds AD (the DIM/VARPTR base address) to every patched
+ 72   0000              ; CALL/JP operand before CALL(AD) is executed.
+ 73   0000
+ 74   0000                              ORG     0000H
+ 75   0000
+ 76   0000              ; ============================================================
+ 77   0000              ; 1.  Clear miss flag
+ 78   0000              ; ============================================================
+ 79   0      175                                      XOR     A               ; A = 0
+ 80   1       50  19 246                        LD      (miss),A        ; clear miss flag for this frame
+ 81   0004
+ 82   0004              ; ============================================================
+ 83   0004              ; 2.  Erase ball
+ 84   0004              ;     Overwrite the 4 rows the ball occupies with 0, except at
+ 85   0004              ;     NET_COL where NET_BYTE (18H) is written to restore the net.
+ 86   0004              ; ============================================================
+ 87   4       58   6 246                        LD      A,(row)
+ 88   7       79                                      LD      C,A             ; C = row (temporary)
+ 89   8       58   5 246                        LD      A,(col)
+ 90   11      71                                      LD      B,A             ; B = col (temporary)
+ 91   12     121                                      LD      A,C             ; A = row
+ 92   13      72                                      LD      C,B             ; C = col
+ 93   14     205   1   3                        CALL    calc_vram       ; DE = VRAM offset for (row, col)
+ 94   17       6   4                               LD      B,4             ; ball is 4 rows tall
+ 95   0013
+ 96   0013              erase_ball_loop:
+ 97   19     197                                      PUSH    BC
+ 98   20     205  20   3                        CALL    set_cursor      ; position HD61830 to DE
+ 99   23     121                                      LD      A,C             ; A = ball column
+100   24     254  15                               CP      NET_COL
+101   26      32   4                               JR      NZ,erase_zero
+102   28      62  24                               LD      A,NET_BYTE      ; restore the two centre net pixels
+103   30      24   1                               JR      erase_write
+104   0020              erase_zero:
+105   32     175                                      XOR     A               ; erase: write zero
+106   0021              erase_write:
+107   33     205  47   3                        CALL    write_byte
+108   36     205 249   2                        CALL    next_row        ; DE += 30 (advance one LCD row)
+109   39     193                                      POP     BC
+110   40      16 233                               DJNZ    erase_ball_loop
+111   002A
+112   002A              ; ============================================================
+113   002A              ; 2.5. Conditional score draw
+114   002A              ;      Always draw if score_dirty != 0.
+115   002A              ;      Also draw if ball row < SCORE_ROWS (ball overlaps digit area).
+116   002A              ; ============================================================
+117   42      58  22 246                        LD      A,(score_dirty)
+118   45     183                                      OR      A
+119   46      32   7                               JR      NZ,do_scores    ; dirty flag set: draw unconditionally
+120   48      58   6 246                        LD      A,(row)         ; check whether ball overlaps score rows
+121   51     254   7                               CP      SCORE_ROWS      ; carry set if row < SCORE_ROWS
+122   53      48  20                               JR      NC,skip_scores  ; no overlap: skip
+123   0037
+124   0037              do_scores:
+125   55      58  20 246                        LD      A,(S1)
+126   58      14   7                               LD      C,P1_SCORE_COL
+127   60     205 207   2                        CALL    draw_digit      ; draw left score
+128   63      58  21 246                        LD      A,(S2)
+129   66      14  22                               LD      C,P2_SCORE_COL
+130   68     205 207   2                        CALL    draw_digit      ; draw right score
+131   71     175                                      XOR     A
+132   72      50  22 246                        LD      (score_dirty),A ; clear dirty flag
+133   004B
+134   004B              skip_scores:
+135   004B
+136   004B              ; ============================================================
+137   004B              ; 3.  Delta left paddle
+138   004B              ;     If ball column == PADDLE_COL the erase above corrupted the
+139   004B              ;     paddle pixels, so do a full erase+redraw of the old and new
+140   004B              ;     paddle positions.  Otherwise use differential updates: only
+141   004B              ;     the PADDLE_SPEED rows that changed are touched.
+142   004B              ; ============================================================
+143   75      58   5 246                        LD      A,(col)
+144   78     254   4                               CP      PADDLE_COL
+145   80      32  34                               JR      NZ,lp_do_delta  ; ball not at left paddle: delta path
+146   0052
+147   0052              ; Ball overlaps left paddle column: full erase then full draw.
+148   82      58  16 246                        LD      A,(old_py)
+149   85      14   4                               LD      C,PADDLE_COL
+150   87     205   1   3                        CALL    calc_vram
+151   90       6  12                               LD      B,PADDLE_HEIGHT
+152   92     205 176   2                        CALL    erase_rows
+153   95      58  15 246                        LD      A,(py)
+154   98      14   4                               LD      C,PADDLE_COL
+155   100    205   1   3                        CALL    calc_vram
+156   103      6  12                               LD      B,PADDLE_HEIGHT
+157   105    205 191   2                        CALL    draw_rows
+158   108     58  15 246                        LD      A,(py)
+159   111     50  16 246                        LD      (old_py),A      ; save py -> old_py
+160   114     24 114                               JR      lp_skip
+161   0074
+162   0074              lp_do_delta:
+163   0074              ; Compute A = old_py - py (signed).
+164   0074              ; No carry (>= 0): old_py > py -> paddle moved up.
+165   0074              ; Carry set (< 0): old_py < py -> paddle moved down.
+166   0074              ; Zero: no change.
+167   116     58  15 246                        LD      A,(py)
+168   119     71                                      LD      B,A             ; B = py
+169   120     58  16 246                        LD      A,(old_py)
+170   123    144                                      SUB     B               ; A = old_py - py
+171   124     40 104                               JR      Z,lp_skip       ; no movement
+172   126     56  46                               JR      C,lp_moved_down ; carry: old_py < py -> moved down
+173   0080
+174   0080              ; --- Paddle moved up (no carry: old_py > py, A = positive delta) ---
+175   0080              ; Erase delta rows at the bottom of the old position: old_py + HEIGHT - delta
+176   0080              ; Draw  delta rows at the top of the new position:    py
+177   128     79                                      LD      C,A             ; C = delta (save before clobbering A)
+178   129     58  16 246                        LD      A,(old_py)
+179   132    198  12                               ADD     A,PADDLE_HEIGHT
+180   134    145                                      SUB     C               ; A = old_py + HEIGHT - delta = py + HEIGHT
+181   135     14   4                               LD      C,PADDLE_COL
+182   137    205   1   3                        CALL    calc_vram       ; DE = VRAM(py+HEIGHT, PADDLE_COL)
+183   008C              ; Recompute delta into B (C was clobbered by LD C,PADDLE_COL; calc_vram preserves B)
+184   140     58  15 246                        LD      A,(py)
+185   143     71                                      LD      B,A
+186   144     58  16 246                        LD      A,(old_py)
+187   147    144                                      SUB     B               ; A = delta
+188   148     71                                      LD      B,A
+189   149    205 176   2                        CALL    erase_rows      ; erase delta rows at old bottom
+190   152     58  15 246                        LD      A,(py)
+191   155     14   4                               LD      C,PADDLE_COL
+192   157    205   1   3                        CALL    calc_vram       ; DE = VRAM(py, PADDLE_COL)
+193   160     58  15 246                        LD      A,(py)
+194   163     71                                      LD      B,A
+195   164     58  16 246                        LD      A,(old_py)
+196   167    144                                      SUB     B               ; A = delta
+197   168     71                                      LD      B,A
+198   169    205 191   2                        CALL    draw_rows       ; draw delta rows at new top
+199   172     24  50                               JR      lp_done
+200   00AE
+201   00AE              lp_moved_down:
+202   00AE              ; Carry: old_py < py -> paddle moved down.  NEG gives |delta| = py - old_py.
+203   174    237  68                               NEG                     ; A = |delta|
+204   176     71                                      LD      B,A             ; B = |delta| (calc_vram preserves B)
+205   00B1              ; Erase |delta| rows at the top of the old position: old_py
+206   177     58  16 246                        LD      A,(old_py)
+207   180     14   4                               LD      C,PADDLE_COL
+208   182    205   1   3                        CALL    calc_vram       ; B = |delta| unchanged
+209   185    205 176   2                        CALL    erase_rows      ; erase |delta| rows at old top
+210   00BC              ; Draw |delta| rows at the new bottom: py + HEIGHT - |delta|
+211   188     58  15 246                        LD      A,(py)
+212   191     71                                      LD      B,A             ; B = py
+213   192     58  16 246                        LD      A,(old_py)
+214   195    144                                      SUB     B               ; old_py - py (negative)
+215   196    237  68                               NEG                     ; |delta|
+216   198     79                                      LD      C,A             ; C = |delta|
+217   199     58  15 246                        LD      A,(py)
+218   202    198  12                               ADD     A,PADDLE_HEIGHT
+219   204    145                                      SUB     C               ; A = py + HEIGHT - |delta|
+220   205     14   4                               LD      C,PADDLE_COL
+221   207    205   1   3                        CALL    calc_vram
+222   00D2              ; Recompute |delta| into B
+223   210     58  15 246                        LD      A,(py)
+224   213     71                                      LD      B,A
+225   214     58  16 246                        LD      A,(old_py)
+226   217    144                                      SUB     B
+227   218    237  68                               NEG                     ; |delta|
+228   220     71                                      LD      B,A
+229   221    205 191   2                        CALL    draw_rows
+230   00E0
+231   00E0              lp_done:
+232   224     58  15 246                        LD      A,(py)
+233   227     50  16 246                        LD      (old_py),A      ; save py -> old_py
+234   00E6              lp_skip:
+235   00E6
+236   00E6              ; ============================================================
+237   00E6              ; 3.5. AI: move right paddle toward ball
+238   00E6              ;      Move PADDLE_SPEED rows per frame, clamp to 0..MAX_PADDLE_Y.
+239   00E6              ;      Target: ball row +/- 3 px tolerance (avoids jitter at centre).
+240   00E6              ; ============================================================
+241   230     58  17 246                        LD      A,(opy)
+242   233     71                                      LD      B,A             ; B = opy
+243   234     58   6 246                        LD      A,(row)
+244   237     79                                      LD      C,A             ; C = ball row
+245   00EE              ; If opy + 3 >= ball row we might need to move up; otherwise move down.
+246   238    120                                      LD      A,B
+247   239    198   3                               ADD     A,3             ; A = opy + 3
+248   241    185                                      CP      C               ; opy+3 vs ball row
+249   242     48   5                               JR      NC,ai_chk_up   ; opy+3 >= ball row: check if already above
+250   244    120                                      LD      A,B
+251   245    198   4                               ADD     A,PADDLE_SPEED  ; move down by PADDLE_SPEED
+252   247     24   9                               JR      ai_clamp
+253   00F9
+254   00F9              ai_chk_up:
+255   00F9              ; If ball row + 3 >= opy the paddle is already at the target zone: no move.
+256   249    121                                      LD      A,C
+257   250    198   3                               ADD     A,3             ; A = ball row + 3
+258   252    184                                      CP      B               ; ball+3 vs opy
+259   253     48  19                               JR      NC,ai_no_move   ; ball+3 >= opy: in zone, no move needed
+260   255    120                                      LD      A,B
+261   256    214   4                               SUB     PADDLE_SPEED    ; move up by PADDLE_SPEED
+262   0102
+263   0102              ai_clamp:
+264   0102              ; Clamp result to 0..MAX_PADDLE_Y.
+265   258    203 127                               BIT     7,A             ; test sign bit (negative = underflow)
+266   260     40   3                               JR      Z,ai_chk_max
+267   262    175                                      XOR     A               ; underflow: clamp to 0
+268   263     24   6                               JR      ai_write
+269   0109              ai_chk_max:
+270   265    254  53                               CP      MAX_PADDLE_Y+1  ; 53
+271   267     56   2                               JR      C,ai_write      ; in range
+272   269     62  52                               LD      A,MAX_PADDLE_Y  ; overflow: clamp to 52
+273   010F
+274   010F              ai_write:
+275   271     50  17 246                        LD      (opy),A
+276   0112              ai_no_move:
+277   0112
+278   0112              ; ============================================================
+279   0112              ; 4.  Delta right paddle (same logic as section 3, using opy/old_opy)
+280   0112              ; ============================================================
+281   274     58   5 246                        LD      A,(col)
+282   277    254  25                               CP      RIGHT_PADDLE_COL
+283   279     32  34                               JR      NZ,rp_do_delta
+284   0119
+285   0119              ; Ball overlaps right paddle column: full erase then full draw.
+286   281     58  18 246                        LD      A,(old_opy)
+287   284     14  25                               LD      C,RIGHT_PADDLE_COL
+288   286    205   1   3                        CALL    calc_vram
+289   289      6  12                               LD      B,PADDLE_HEIGHT
+290   291    205 176   2                        CALL    erase_rows
+291   294     58  17 246                        LD      A,(opy)
+292   297     14  25                               LD      C,RIGHT_PADDLE_COL
+293   299    205   1   3                        CALL    calc_vram
+294   302      6  12                               LD      B,PADDLE_HEIGHT
+295   304    205 191   2                        CALL    draw_rows
+296   307     58  17 246                        LD      A,(opy)
+297   310     50  18 246                        LD      (old_opy),A
+298   313     24 114                               JR      rp_skip
+299   013B
+300   013B              rp_do_delta:
+301   315     58  17 246                        LD      A,(opy)
+302   318     71                                      LD      B,A             ; B = opy
+303   319     58  18 246                        LD      A,(old_opy)
+304   322    144                                      SUB     B               ; A = old_opy - opy
+305   323     40 104                               JR      Z,rp_skip       ; no movement
+306   325     56  46                               JR      C,rp_moved_down ; carry: old_opy < opy -> moved down
+307   0147
+308   0147              ; --- Right paddle moved up ---
+309   327     79                                      LD      C,A             ; C = delta
+310   328     58  18 246                        LD      A,(old_opy)
+311   331    198  12                               ADD     A,PADDLE_HEIGHT
+312   333    145                                      SUB     C               ; A = old_opy + HEIGHT - delta
+313   334     14  25                               LD      C,RIGHT_PADDLE_COL
+314   336    205   1   3                        CALL    calc_vram
+315   339     58  17 246                        LD      A,(opy)
+316   342     71                                      LD      B,A
+317   343     58  18 246                        LD      A,(old_opy)
+318   346    144                                      SUB     B               ; A = delta
+319   347     71                                      LD      B,A
+320   348    205 176   2                        CALL    erase_rows
+321   351     58  17 246                        LD      A,(opy)
+322   354     14  25                               LD      C,RIGHT_PADDLE_COL
+323   356    205   1   3                        CALL    calc_vram
+324   359     58  17 246                        LD      A,(opy)
+325   362     71                                      LD      B,A
+326   363     58  18 246                        LD      A,(old_opy)
+327   366    144                                      SUB     B               ; A = delta
+328   367     71                                      LD      B,A
+329   368    205 191   2                        CALL    draw_rows
+330   371     24  50                               JR      rp_done
+331   0175
+332   0175              rp_moved_down:
+333   373    237  68                               NEG                     ; A = |delta|
+334   375     71                                      LD      B,A
+335   376     58  18 246                        LD      A,(old_opy)
+336   379     14  25                               LD      C,RIGHT_PADDLE_COL
+337   381    205   1   3                        CALL    calc_vram
+338   384    205 176   2                        CALL    erase_rows
+339   387     58  17 246                        LD      A,(opy)
+340   390     71                                      LD      B,A
+341   391     58  18 246                        LD      A,(old_opy)
+342   394    144                                      SUB     B
+343   395    237  68                               NEG                     ; |delta|
+344   397     79                                      LD      C,A
+345   398     58  17 246                        LD      A,(opy)
+346   401    198  12                               ADD     A,PADDLE_HEIGHT
+347   403    145                                      SUB     C               ; A = opy + HEIGHT - |delta|
+348   404     14  25                               LD      C,RIGHT_PADDLE_COL
+349   406    205   1   3                        CALL    calc_vram
+350   409     58  17 246                        LD      A,(opy)
+351   412     71                                      LD      B,A
+352   413     58  18 246                        LD      A,(old_opy)
+353   416    144                                      SUB     B
+354   417    237  68                               NEG                     ; |delta|
+355   419     71                                      LD      B,A
+356   420    205 191   2                        CALL    draw_rows
+357   01A7
+358   01A7              rp_done:
+359   423     58  17 246                        LD      A,(opy)
+360   426     50  18 246                        LD      (old_opy),A
+361   01AD              rp_skip:
+362   01AD
+363   01AD              ; ============================================================
+364   01AD              ; 5.  Update col (horizontal movement + wall bounce + miss/score)
+365   01AD              ;     dx = 01H (right) or 0FFH (-1, left).
+366   01AD              ;     Walls at col 0 (P1 misses) and col MAX_COL (P2 misses).
+367   01AD              ; ============================================================
+368   429     58   5 246                        LD      A,(col)
+369   432     71                                      LD      B,A             ; B = current col
+370   433     58   7 246                        LD      A,(dx)
+371   436    128                                      ADD     A,B             ; A = col + dx
+372   437    254  30                               CP      MAX_COL+1       ; 30: carry set if A < 30 (in range)
+373   439     56   9                               JR      C,col_ok
+374   441     58   7 246                        LD      A,(dx)
+375   444    237  68                               NEG                     ; flip direction
+376   446     50   7 246                        LD      (dx),A
+377   449    128                                      ADD     A,B             ; recompute col with reversed dx
+378   01C2              col_ok:
+379   450     50   5 246                        LD      (col),A
+380   01C5
+381   01C5              ; P1 miss: col == 0 -> increment S1, beep, set score_dirty
+382   453     58   5 246                        LD      A,(col)
+383   456    183                                      OR      A               ; Z if col = 0
+384   457     32  28                               JR      NZ,no_p1miss
+385   459     62   1                               LD      A,01H
+386   461     50  19 246                        LD      (miss),A        ; record P1 miss
+387   464     33  20 246                        LD      HL,S1
+388   467     52                                      INC     (HL)            ; S1++
+389   468    126                                      LD      A,(HL)
+390   469    254  10                               CP      10
+391   471     32   2                               JR      NZ,p1score_nowrap
+392   473     54   0                               LD      (HL),0          ; wrap at 10
+393   01DB              p1score_nowrap:
+394   475     62   1                               LD      A,01H
+395   477     50  22 246                        LD      (score_dirty),A ; flag score for redraw
+396   480     14   2                               LD      C,02H           ; BDOS fn 2: console output
+397   482     30   7                               LD      E,07H           ; BEL character
+398   484    205   5   0                        CALL    0005H
+399   01E7              no_p1miss:
+400   01E7
+401   01E7              ; P2 miss: col == MAX_COL -> increment S2, beep, set score_dirty
+402   487     58   5 246                        LD      A,(col)
+403   490    254  29                               CP      MAX_COL         ; 29
+404   492     32  28                               JR      NZ,no_p2miss
+405   494     62   2                               LD      A,02H
+406   496     50  19 246                        LD      (miss),A        ; record P2 miss
+407   499     33  21 246                        LD      HL,S2
+408   502     52                                      INC     (HL)            ; S2++
+409   503    126                                      LD      A,(HL)
+410   504    254  10                               CP      10
+411   506     32   2                               JR      NZ,p2score_nowrap
+412   508     54   0                               LD      (HL),0          ; wrap at 10
+413   01FE              p2score_nowrap:
+414   510     62   1                               LD      A,01H
+415   512     50  22 246                        LD      (score_dirty),A
+416   515     14   2                               LD      C,02H
+417   517     30   7                               LD      E,07H
+418   519    205   5   0                        CALL    0005H
+419   020A              no_p2miss:
+420   020A
+421   020A              ; ============================================================
+422   020A              ; 6.  Update row (vertical movement + wall bounce at 1 and 60)
+423   020A              ; ============================================================
+424   522     58   6 246                        LD      A,(row)
+425   525     71                                      LD      B,A
+426   526     58   8 246                        LD      A,(dy)
+427   529    128                                      ADD     A,B             ; A = row + dy
+428   530    254  61                               CP      MAX_ROW+1       ; 61: carry set if A < 61
+429   532     56  12                               JR      C,chk_minrow
+430   534     58   8 246                        LD      A,(dy)
+431   537    237  68                               NEG
+432   539     50   8 246                        LD      (dy),A
+433   542     62  60                               LD      A,MAX_ROW       ; clamp to 60
+434   544     24  14                               JR      row_ok
+435   0222              chk_minrow:
+436   546    254   1                               CP      MIN_ROW         ; 1: carry set if A < 1
+437   548     48  10                               JR      NC,row_ok
+438   550     58   8 246                        LD      A,(dy)
+439   553    237  68                               NEG
+440   555     50   8 246                        LD      (dy),A
+441   558     62   1                               LD      A,MIN_ROW       ; clamp to 1
+442   0230              row_ok:
+443   560     50   6 246                        LD      (row),A
+444   0233
+445   0233              ; ============================================================
+446   0233              ; 7.  Left paddle collision
+447   0233              ;     Bounce dx if ball is at PADDLE_COL, moving left (dx = 0FFH),
+448   0233              ;     and ball row is within py..py+PADDLE_HEIGHT-1 (with 3-row tolerance).
+449   0233              ; ============================================================
+450   563     58   5 246                        LD      A,(col)
+451   566    254   4                               CP      PADDLE_COL
+452   568     32  38                               JR      NZ,no_lpbounce
+453   570     58   7 246                        LD      A,(dx)
+454   573     60                                      INC     A               ; dx = 0FFH (-1)? -> INC gives 0
+455   574     32  32                               JR      NZ,no_lpbounce  ; not moving left: no bounce
+456   0240              ; ball+3 must be >= py (ball is not entirely above paddle)
+457   576     58  15 246                        LD      A,(py)
+458   579     71                                      LD      B,A
+459   580     58   6 246                        LD      A,(row)
+460   583    198   3                               ADD     A,3
+461   585    184                                      CP      B               ; (row+3) vs py
+462   586     56  20                               JR      C,no_lpbounce   ; row+3 < py: above paddle
+463   024C              ; ball row must be < py+PADDLE_HEIGHT (ball is not entirely below paddle)
+464   588     58  15 246                        LD      A,(py)
+465   591    198  12                               ADD     A,PADDLE_HEIGHT
+466   593     71                                      LD      B,A
+467   594     58   6 246                        LD      A,(row)
+468   597    184                                      CP      B               ; row vs py+HEIGHT
+469   598     48   8                               JR      NC,no_lpbounce  ; row >= py+HEIGHT: below paddle
+470   600     58   7 246                        LD      A,(dx)
+471   603    237  68                               NEG
+472   605     50   7 246                        LD      (dx),A          ; reverse dx
+473   0260              no_lpbounce:
+474   0260
+475   0260              ; ============================================================
+476   0260              ; 8.  Right paddle collision
+477   0260              ;     Bounce dx if ball is at RIGHT_PADDLE_COL, moving right (dx = 01H),
+478   0260              ;     and ball row overlaps opy..opy+PADDLE_HEIGHT-1 (with 3-row tolerance).
+479   0260              ; ============================================================
+480   608     58   5 246                        LD      A,(col)
+481   611    254  25                               CP      RIGHT_PADDLE_COL
+482   613     32  38                               JR      NZ,no_rpbounce
+483   615     58   7 246                        LD      A,(dx)
+484   618     61                                      DEC     A               ; dx = 01H (right)? -> DEC gives 0
+485   619     32  32                               JR      NZ,no_rpbounce  ; not moving right: no bounce
+486   621     58  17 246                        LD      A,(opy)
+487   624     71                                      LD      B,A
+488   625     58   6 246                        LD      A,(row)
+489   628    198   3                               ADD     A,3
+490   630    184                                      CP      B
+491   631     56  20                               JR      C,no_rpbounce   ; row+3 < opy: above
+492   633     58  17 246                        LD      A,(opy)
+493   636    198  12                               ADD     A,PADDLE_HEIGHT
+494   638     71                                      LD      B,A
+495   639     58   6 246                        LD      A,(row)
+496   642    184                                      CP      B
+497   643     48   8                               JR      NC,no_rpbounce  ; row >= opy+HEIGHT: below
+498   645     58   7 246                        LD      A,(dx)
+499   648    237  68                               NEG
+500   650     50   7 246                        LD      (dx),A
+501   028D              no_rpbounce:
+502   028D
+503   028D              ; ============================================================
+504   028D              ; 9.  Draw ball
+505   028D              ;     Write the 4 sprite bytes to VRAM starting at (row, col).
+506   028D              ; ============================================================
+507   653     58   5 246                        LD      A,(col)
+508   656     79                                      LD      C,A
+509   657     58   6 246                        LD      A,(row)
+510   660    205   1   3                        CALL    calc_vram       ; DE = VRAM offset
+511   663     33   9 246                        LD      HL,sprite       ; HL -> sprite data (patched by BASIC)
+512   666      6   4                               LD      B,4             ; 4 rows
+513   029C
+514   029C              draw_ball_loop:
+515   668    197                                      PUSH    BC
+516   669    205  20   3                        CALL    set_cursor
+517   672    126                                      LD      A,(HL)
+518   673     35                                      INC     HL
+519   674    205  47   3                        CALL    write_byte
+520   677    229                                      PUSH    HL
+521   678    205 249   2                        CALL    next_row        ; DE += 30
+522   681    225                                      POP     HL
+523   682    193                                      POP     BC
+524   683     16 239                               DJNZ    draw_ball_loop
+525   02AD
+526   685     62   0                               LD      A,00H
+527   687    201                                      RET                     ; return to BASIC main loop
+528   02B0
+529   02B0              ; ============================================================
+530   02B0              ; SUBROUTINE: erase_rows
+531   02B0              ;   In:  B = row count,  DE = VRAM start address
+532   02B0              ;   Writes 00H (erase) to B consecutive LCD rows.
+533   02B0              ; ============================================================
+534   02B0              erase_rows:
+535   688    197                                      PUSH    BC
+536   689    205  20   3                        CALL    set_cursor
+537   692    175                                      XOR     A               ; 00H = erase
+538   693    205  47   3                        CALL    write_byte
+539   696    205 249   2                        CALL    next_row        ; DE += 30
+540   699    193                                      POP     BC
+541   700     16 242                               DJNZ    erase_rows
+542   702    201                                      RET
+543   02BF
+544   02BF              ; ============================================================
+545   02BF              ; SUBROUTINE: draw_rows
+546   02BF              ;   In:  B = row count,  DE = VRAM start address
+547   02BF              ;   Writes PADDLE_BYTE (0FFH) to B consecutive LCD rows.
+548   02BF              ; ============================================================
+549   02BF              draw_rows:
+550   703    197                                      PUSH    BC
+551   704    205  20   3                        CALL    set_cursor
+552   707     62 255                               LD      A,PADDLE_BYTE   ; 0FFH = solid paddle pixel
+553   709    205  47   3                        CALL    write_byte
+554   712    205 249   2                        CALL    next_row
+555   715    193                                      POP     BC
+556   716     16 241                               DJNZ    draw_rows
+557   718    201                                      RET
+558   02CF
+559   02CF              ; ============================================================
+560   02CF              ; SUBROUTINE: draw_digit
+561   02CF              ;   In:  A = digit (0..9),  C = byte-column
+562   02CF              ;   Draws a SCORE_ROWS-tall digit from digit_font at LCD rows 0..6.
+563   02CF              ;   Uses: all registers.  C must be set by caller before each call.
+564   02CF              ; ============================================================
+565   02CF              draw_digit:
+566   719     95                                      LD      E,A             ; E = digit
+567   720     22   0                               LD      D,0             ; DE = digit (16-bit)
+568   722     98                                      LD      H,D             ; H = 0
+569   723    107                                      LD      L,E             ; HL = digit
+570   724     41                                      ADD     HL,HL           ; HL = digit * 2
+571   725     25                                      ADD     HL,DE           ; HL = digit * 3
+572   726     41                                      ADD     HL,HL           ; HL = digit * 6
+573   727     25                                      ADD     HL,DE           ; HL = digit * 7  (byte offset in font)
+574   728     17  68   3                        LD      DE,digit_font   ; DE = base address of font (patched by BASIC)
+575   731     25                                      ADD     HL,DE           ; HL -> first byte of this digit's 7 rows
+576   732    229                                      PUSH    HL              ; save font pointer
+577   733     62   0                               LD      A,0             ; row 0 (top of screen)
+578   735    205   1   3                        CALL    calc_vram       ; DE = VRAM(0, C)
+579   738    225                                      POP     HL              ; restore font pointer
+580   739      6   7                               LD      B,SCORE_ROWS    ; B = 7
+581   02E5
+582   02E5              draw_digit_loop:
+583   741    197                                      PUSH    BC
+584   742    229                                      PUSH    HL
+585   743    205  20   3                        CALL    set_cursor
+586   746    225                                      POP     HL
+587   747    126                                      LD      A,(HL)          ; load font pixel row
+588   748     35                                      INC     HL
+589   749    205  47   3                        CALL    write_byte
+590   752    229                                      PUSH    HL
+591   753    205 249   2                        CALL    next_row        ; DE += 30
+592   756    225                                      POP     HL
+593   757    193                                      POP     BC
+594   758     16 237                               DJNZ    draw_digit_loop
+595   760    201                                      RET
+596   02F9
+597   02F9              ; ============================================================
+598   02F9              ; SUBROUTINE: next_row
+599   02F9              ;   In/Out: DE = VRAM address.  Advances DE by 30 (one LCD pixel-row).
+600   02F9              ; ============================================================
+601   02F9              next_row:
+602   761     98                                      LD      H,D
+603   762    107                                      LD      L,E
+604   763     17  30   0                        LD      DE,001EH        ; 30 decimal
+605   766     25                                      ADD     HL,DE
+606   767    235                                      EX      DE,HL           ; DE = original + 30
+607   768    201                                      RET
+608   0301
+609   0301              ; ============================================================
+610   0301              ; SUBROUTINE: calc_vram
+611   0301              ;   In:  A = pixel row (0..63),  C = byte-column (0..29)
+612   0301              ;   Out: DE = row*30 + col  (HD61830 VRAM byte offset)
+613   0301              ;   row*30 is computed as row*32 - row*2 using shift/subtract.
+614   0301              ; ============================================================
+615   0301              calc_vram:
+616   769    111                                      LD      L,A             ; HL = row
+617   770     38   0                               LD      H,0
+618   772     41                                      ADD     HL,HL           ; row * 2
+619   773    229                                      PUSH    HL              ; save row*2
+620   774     41                                      ADD     HL,HL           ; row * 4
+621   775     41                                      ADD     HL,HL           ; row * 8
+622   776     41                                      ADD     HL,HL           ; row * 16
+623   777     41                                      ADD     HL,HL           ; row * 32
+624   778    209                                      POP     DE              ; DE = row * 2
+625   779    183                                      OR      A               ; clear carry for SBC
+626   780    237  82                               SBC     HL,DE           ; HL = row*32 - row*2 = row*30
+627   782     89                                      LD      E,C             ; E = col
+628   783     22   0                               LD      D,0
+629   785     25                                      ADD     HL,DE           ; HL = row*30 + col
+630   786    235                                      EX      DE,HL           ; DE = VRAM offset
+631   787    201                                      RET
+632   0314
+633   0314              ; ============================================================
+634   0314              ; SUBROUTINE: set_cursor
+635   0314              ;   In:  DE = VRAM offset.
+636   0314              ;   Writes cursor address (low then high) to HD61830 via ports 21H/20H.
+637   0314              ;   Commands: 0AH = SET CURSOR ADDRESS (low byte)
+638   0314              ;             0BH = SET CURSOR ADDRESS (high byte)
+639   0314              ; ============================================================
+640   0314              set_cursor:
+641   788    205  62   3                        CALL    wait_busy
+642   791     62  10                               LD      A,0AH           ; command: set cursor address low
+643   793    211  33                               OUT     (21H),A
+644   795    205  62   3                        CALL    wait_busy
+645   798    123                                      LD      A,E             ; low byte of VRAM offset
+646   799    211  32                               OUT     (20H),A
+647   801    205  62   3                        CALL    wait_busy
+648   804     62  11                               LD      A,0BH           ; command: set cursor address high
+649   806    211  33                               OUT     (21H),A
+650   808    205  62   3                        CALL    wait_busy
+651   811    122                                      LD      A,D             ; high byte of VRAM offset
+652   812    211  32                               OUT     (20H),A
+653   814    201                                      RET
+654   032F
+655   032F              ; ============================================================
+656   032F              ; SUBROUTINE: write_byte
+657   032F              ;   In:  A = byte to write.
+658   032F              ;   Sends WRITE DISPLAY DATA command (0CH) then the data byte.
+659   032F              ; ============================================================
+660   032F              write_byte:
+661   815    245                                      PUSH    AF
+662   816    205  62   3                        CALL    wait_busy
+663   819     62  12                               LD      A,0CH           ; command: write display data
+664   821    211  33                               OUT     (21H),A
+665   823    205  62   3                        CALL    wait_busy
+666   826    241                                      POP     AF
+667   827    211  32                               OUT     (20H),A         ; write data byte
+668   829    201                                      RET
+669   033E
+670   033E              ; ============================================================
+671   033E              ; SUBROUTINE: wait_busy
+672   033E              ;   Polls HD61830 status port 21H.  Bit 7 = busy flag.
+673   033E              ;   Loops until bit 7 is clear (controller ready).
+674   033E              ; ============================================================
+675   033E              wait_busy:
+676   830    219  33                               IN      A,(21H)
+677   832      7                                      RLCA                    ; rotate bit 7 into carry
+678   833     56 251                               JR      C,wait_busy     ; carry set = still busy
+679   835    201                                      RET
+680   0344
+681   0344              ; ============================================================
+682   0344              ; DATA: digit_font
+683   0344              ;   10 digits x 7 rows = 70 bytes.
+684   0344              ;   Each byte is one LCD row, bit 0 = leftmost pixel of the byte-column.
+685   0344              ;   Digits 0-9, each 7 rows tall, drawn at rows 0..6 of the screen.
+686   0344              ; ============================================================
+687   0344              digit_font:
+688   0344              ; 0: full box
+689   836    124  68  68  68                  DB      7CH,44H,44H,44H,44H,44H,7CH
+689   0348 44 44 7C
+690   034B              ; 1: right-aligned vertical bar
+691   843     16  24  16  16                  DB      10H,18H,10H,10H,10H,10H,38H
+691   034F 10 10 38
+692   0352              ; 2: top-right, middle, bottom-left
+693   850    124  64  64 124                  DB      7CH,40H,40H,7CH,04H,04H,7CH
+693   0356 04 04 7C
+694   0359              ; 3: top-right, middle, bottom-right
+695   857    124  64  64 124                  DB      7CH,40H,40H,7CH,40H,40H,7CH
+695   035D 40 40 7C
+696   0360              ; 4: top sides, middle, right bar
+697   864     68  68  68 124                  DB      44H,44H,44H,7CH,40H,40H,00H
+697   0364 40 40 00
+698   0367              ; 5: top-left, middle, bottom-right
+699   871    124   4   4 124                  DB      7CH,04H,04H,7CH,40H,40H,7CH
+699   036B 40 40 7C
+700   036E              ; 6: top-left, middle, full bottom
+701   878    124   4   4 124                  DB      7CH,04H,04H,7CH,44H,44H,7CH
+701   0372 44 44 7C
+702   0375              ; 7: top bar, right bar
+703   885    124  64  64  64                  DB      7CH,40H,40H,40H,40H,40H,00H
+703   0379 40 40 00
+704   037C              ; 8: full box with middle bar
+705   892    124  68  68 124                  DB      7CH,44H,44H,7CH,44H,44H,7CH
+705   0380 44 44 7C
+706   0383              ; 9: top box, bottom-right
+707   899    124  68  68 124                  DB      7CH,44H,44H,7CH,40H,40H,7CH
+707   0387 40 40 7C
+708   038A
+# file closed: PONG2P.asm

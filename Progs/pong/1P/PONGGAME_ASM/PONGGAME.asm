@@ -10,6 +10,9 @@
 ; BASIC patches them to real addresses at runtime before CALL(AD).
 ; EXCEPTION: CALL 0005H (BDOS) is NOT patched - 0005H is the real CP/M vector.
 ;
+; Build: sjasmplus PONGGAME.asm  (generates PONGGAME.lst)
+;        python asm_tools/lst_to_dlst.py PONGGAME.lst > PONGGAME.dlst
+;
 ; Param block at F605H (62981) - fixed user code area (12 bytes):
 ;   +0     : col      (byte column, 0-29)
 ;   +1     : row      (pixel row, 0-60)

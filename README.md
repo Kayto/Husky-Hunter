@@ -6,10 +6,15 @@
 
 **In Progress**
 
-* Two player Pong
-\- Second computer player and score added\. Some serious optimisations needed to reduce reliance on BASIC and associated overhead to make this faster\!
 * Two player Pong via serial
-\- Two serial connected Hunters to play a single game together\.  Currently testing via real Hunter to MAME Hunter and via a Serial bridge that mimics player 2\. But relies on a faster optimised two player Pong to be useable\.
+\- Two serial connected Hunters to play a single game together\.  Currently testing via real Hunter to MAME Hunter and via a Serial bridge that mimics player 2\. Requires a faster optimised two player Pong to be useable\.
+- - -
+
+**11 May 2026**
+
+* PONG2P — Human vs AI Pong released\.
+\- AI\-controlled right paddle\, score display\, delta paddle rendering and inline 7\-row digit font\. 906 bytes of Z80 MC\.
+
 - - -
 
 **09 May 2026**
@@ -60,7 +65,8 @@ Programs that run on the Hunter. Source files are in `Progs/` and `Y2K/`; pre-bu
 | [image\_writer](Progs/image_writer/) | LCD image display — Hunter program shows images converted from PNG/JPEG by PC-side tool | Working on hardware |
 | [BASIC](Progs/BASIC/) | Short stand-alone programs — charset printer, Collatz sequence, Hello World graphic, system diagnostic | Working on hardware |
 | [machine\_code](Progs/machine_code/) | Machine code interface demos — Z80 routines called from Hunter BASIC via `ARG`/`CALL`; BDOS console output and Collatz BASIC-vs-MC benchmark | Working on hardware |
-| [PONGGAME](Progs/pong/) | Single-player Pong — paddle, collision, beep on miss, configurable speed. 451 bytes of Z80 MC. Is this the first game for the Husky Hunter! | Working on hardware |
+| [PONGGAME](Progs/pong/1P/) | Single-player Pong — paddle, collision, beep on miss, configurable speed. 451 bytes of Z80 MC. Is this the first game for the Husky Hunter! | Working on hardware |
+| [PONG2P](Progs/pong/2P/) | Human vs AI Pong with scoring — delta paddle rendering, inline 7-row digit font, AI dead-zone tracking. 906 bytes of Z80 MC. | Working on hardware |
 | [defendERR](Progs/DefendERR/) | Defender-style side-scroller (ship, scrolling stars, fire, two enemy waves, ship/shot collisions, lives + heart HUD, score, BASIC SOUND laser on fire) | Working on hardware |
 | [Sound](Progs/Sound/) | Sound programs — BASIC `SOUND` scale/sweep (SND1), tunes (SND2), FX sampler (SND3), and Z80 MC tone generator via port 86H bit-bang (SND4, ROM-verified) | Working on hardware |
 | [Animation](Progs/Animation/) | MC-driven sprite animations — horizontal, wave-motion, two-sprite, and Pong-style bouncing ball, all running in Z80 machine code with BASIC loader | Working on hardware |

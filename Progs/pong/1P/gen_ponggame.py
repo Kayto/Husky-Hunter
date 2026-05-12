@@ -27,7 +27,7 @@ Param block at PARAM_BASE (F605H / 62981):
     +11    : old_py (previous py, written by MC)
 
 Usage:
-    python Progs/pong/gen_ponggame.py
+    python Progs/pong/1P/gen_ponggame.py
 """
 
 from pathlib import Path
