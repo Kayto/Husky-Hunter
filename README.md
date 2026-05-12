@@ -7,7 +7,7 @@
 **In Progress**
 
 * Two player Pong via serial
-\- Two serial connected Hunters to play a single game together\.  Currently testing via real Hunter to MAME Hunter and via a Serial bridge that mimics player 2\. Requires a faster optimised two player Pong to be useable\.
+\- Two serial connected Hunters to play a single game together\.  Currently testing via real Hunter to MAME Hunter and via a Serial bridge that mimics player 2\. Requires a faster optimised two player Pong to be useable. Oh and MAME fixes\!
 - - -
 
 **11 May 2026**
