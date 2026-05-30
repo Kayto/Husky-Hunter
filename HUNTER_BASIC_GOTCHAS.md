@@ -331,15 +331,97 @@ This means `GOTO` or `CONT` after BREAK **would** hit `*FOP Error`
 
 ## Serial Port (RS-232)
 
-| Setting | Memory Address | Default | Notes |
-| ------- | -------------- | ------- | ----- |
-| Baud rate | 63480 (F7E8H) | 6 (1200 baud) | Values: 4=300, 5=600, 6=1200, 7=2400, 9=4800 |
-| Parity | 63487 | 0 (none) |  |
-| Parity type | 63488 | 0 |  |
-| XON/XOFF | 63482 | — | POKE 0 to disable |
-| CTS | 63483 | — | POKE 0 to disable |
-| DSR | 63485 | — | POKE 0 to disable |
-| DCD | 63486 | — | POKE 0 to disable |
+Full address table is in [RS232_REFERENCE.md](RS232_REFERENCE.md). The
+short version:
+
+| Setting | Address | Notes |
+| ------- | ------- | ----- |
+| TX baud | 63480 | 9 = 4800 |
+| RX baud | 63481 | 9 = 4800 |
+| CTSAF (CTS enable) | 63482 | 1 = gate TX on CTS; 0 = ignore CTS |
+| DTRAF | 63483 | 1 = drive DTR active during TX/RX |
+| RTSAF | 63484 | 0=off, 1=hold (drop on buffer near-full), 2=true (always +ve) |
+| DSRAF | 63485 | 1 = require DSR active before TX/RX |
+| DCDAF | 63486 | 1 = require DCD active for RX |
+| TXPTY | 63487 | 0=none, 1=odd, 2=even, **3=8-bit (required for values ≥128)** |
+| RXPTY | 63488 | as TXPTY |
+| TXPROT | 63489 | 0=none. Protocols: XON/XOFF, ETX/ACK, ACK/NAK, Systime |
+| RXPROT | 63493 | as TXPROT |
+
+### `COM OFF` mid-program needs a trailing `:` and more statements
+
+`COM OFF` works fine when followed by more statements on the same line
+(e.g. `200 COM OFF:KEY ON:END` — the standard end-of-program pattern
+in RXTEST / COMTEST), but **`COM OFF` alone on its own line in the
+middle of a program raises `*STX Error` at RUN time**.
+
+The tokenization is identical in both cases (`FE 8B 4F 46 46` — the
+COM token followed by literal ASCII `"OFF"`; tokenizer behaviour
+confirmed by Hunter-native LOAD/SAVE round-trip), so this is a
+parser / interpreter quirk, not a tokenizer bug.
+
+**Wrong** (STX error at line 40 when execution reaches it):
+``` basic
+36 COM ON
+38 FOR I=1 TO 3000:NEXT I
+40 COM OFF                  :REM <-- *STX Error here
+42 POKE 63484,1
+```
+
+**Right options** — pick any:
+- Move `COM OFF` to the end-of-program line: `200 COM OFF:KEY ON:END`
+  (this is what existing diagnostic programs do).
+- Add any trailing statement on the same line:
+  `40 COM OFF:POKE 63484,1`
+- Avoid disabling the ISR at all — use a flag inside the handler so
+  it returns early without calling `LINCHR`:
+  ``` basic
+  100 DR=1                  :REM main: switch to "skip drain" mode
+  500 IF DR=1 THEN RETURN   :REM handler: bypass when flagged
+  510 LINCHR LV
+  520 RETURN
+  ```
+  Bytes still accumulate in the RX buffer because `LINCHR` isn't being
+  called; the ISR fires per byte but does nothing. This is what
+  `Progs/Comms/RTSTEST.BAS` v1.4 does.
+
+Discovered while writing
+[`Progs/Comms/RTSTEST.BAS`](Progs/Comms/RTSTEST.BAS) — v1.3 had a
+pre-drain phase that used `COM ON` + `FOR I=1 TO 3000:NEXT I` +
+`COM OFF` on consecutive lines. The `COM OFF` line raised `*STX Error`
+even though the line was reached after a clean drain. v1.4 swapped
+to the flag-based pattern above and runs without issue.
+
+### Handshake POKEs must come *after* `OUT 132,1`
+
+`OUT 132,1` powers up the serial interface (§6.3.3). It also **clears
+the handshake configuration flags** (CTSAF, RTSAF, DSRAF, DCDAF, DTRAF)
+as a side-effect. Any POKE to one of those addresses *before* the
+`OUT 132,1` gets clobbered, silently. The baud rate and parity POKEs
+survive.
+
+**Wrong** (CTS gating silently disabled):
+``` basic
+20 POKE 63482,1   :REM CTSAF = enable CTS gating
+22 POKE 63487,3   :REM TXPTY = 8-bit
+24 OUT 132,1      :REM ...this resets CTSAF back to 0
+```
+
+**Right**:
+``` basic
+20 POKE 63487,3   :REM TXPTY = 8-bit (survives OUT)
+22 OUT 132,1      :REM power up serial interface first
+24 POKE 63482,1   :REM CTSAF = enable CTS gating (sticks)
+```
+
+Discovered by [`Progs/Comms/CTSTEST.BAS`](Progs/Comms/CTSTEST.BAS) — v1.0
+poked CTSAF before `OUT 132,1` and CTS gating did nothing on the wire,
+even though the Hunter accepted the POKE without error. v1.1 added a
+`PEEK(63482)` readback, moved the POKE after the OUT, and the gating
+worked as documented in manual §6.4.7.1.
+
+> If your handshake-dependent program "should work according to the
+> manual" but doesn't, this is the first thing to check.
 
 ### LINPUT for RS-232 receive
 

@@ -39,6 +39,14 @@ This is required for any program that communicates over RS-232.
 > [!WARNING]
 > With parity = `None` (0) the Hunter firmware **clears bit 7 on every transmitted byte**. A `LOPCHR 200` (0xC8) will arrive as 72 (0x48). Use parity = `8-bit` (3) for any protocol that sends binary, sync bytes, or values >127.
 
+## ⚠ Handshake POKE order
+
+`OUT 132,1` (serial interface power-on) **clears the handshake config
+flags** (CTSAF, RTSAF, DSRAF, DCDAF, DTRAF). POKE these *after* the OUT,
+not before, or they get silently reset to 0. Baud rate and parity POKEs
+survive the OUT. See [HUNTER_BASIC_GOTCHAS.md](HUNTER_BASIC_GOTCHAS.md#handshake-pokes-must-come-after-out-1321)
+for the worked example.
+
 ## Handshaking & Protocol
 
 | Address | Name | Purpose | Values |

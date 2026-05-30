@@ -6,8 +6,21 @@
 
 **In Progress**
 
+* Serial comms — handshaking and protocol
+\- Working through CTS/RTS/DSR/DCD handshaking and parity on real hardware\. Several quirks now documented \(see below\)\. The comms test programs that drove these findings \(`COMTEST`\, `TXTEST`\, `RXTEST`\, `CTSTEST`\, `RTSTEST` and their PC\-side Python servers\) are not yet published — they will land in [`Progs/Comms/`](Progs/Comms/) once tidied up\.
+
 * Two player Pong via serial
 \- Two serial connected Hunters to play a single game together\.  Currently testing via real Hunter to MAME Hunter and via a Serial bridge that mimics player 2\. Requires a faster optimised two player Pong to be useable. Oh and MAME fixes\!
+- - -
+
+**30 May 2026**
+
+* ROM disassembly reference added. This has been in continual development whilst working on the MAME development so quite useful. It should be considered a work in progress and subject to errors/misinterpretations for now\.
+\- New [`ROM/`](ROM/) folder with [`ROM_SYMBOLS.md`](ROM/ROM_SYMBOLS.md) — a work\-in\-progress\, address\-sorted index of routines\, data tables and RAM variables named so far from disassembly of the 1983 DEMOS 2\.2 firmware \(build `9G06h`\)\.
+
+* Serial gotchas documented\.
+\- [HUNTER\_BASIC\_GOTCHAS.md](HUNTER_BASIC_GOTCHAS.md) and [RS232\_REFERENCE.md](RS232_REFERENCE.md) updated with two hardware\-confirmed RS\-232 quirks discovered while writing the \(yet to be published\) comms test programs\: `COM OFF` raising `*STX Error` when alone mid\-program\, and handshake POKEs being silently cleared unless done *after* `OUT 132,1`\.
+
 - - -
 
 **11 May 2026**
