@@ -112,6 +112,21 @@ mirrors) at run time.
 | `04DDH` | `PAGED_COLD_INIT` | ROM | Cold init for the paged-RAM window |
 | `065BH` | `SOUND_ISR_AREA` | ROM | Sound ISR area start (disasm_1983.py) |
 | `067DH` | `SOUND_ISR` | ROM | SOUND interrupt handler |
+| `072BH` | `PRAM_OP_OPEN` | ROM | Paged-RAM operator open |
+| `0731H` | `PRAM_OP_EXIT_NOWB` | ROM | Shared exit |
+| `0737H` | `PRAM_OP_REOPEN` | ROM | Paged-RAM operator reopen |
+| `073FH` | `PRAM_OP_WILD_NEXT` | ROM | Paged-RAM operator wild next |
+| `0747H` | `PRAM_OP_POS_INIT` | ROM | Paged-RAM operator pos init |
+| `074DH` | `PRAM_OP_EXIT_3B` | ROM | Shared exit: 3-byte writeback to caller's [DE+0x21] via EBB8H |
+| `075EH` | `PRAM_OP_SAVE_BLK` | ROM | Paged-RAM operator save blk |
+| `0766H` | `PRAM_OP_LOAD_BLK` | ROM | Paged-RAM operator load blk |
+| `0771H` | `PRAM_OP_READ_NAMED` | ROM | Paged-RAM operator read named |
+| `077AH` | `PRAM_OP_EXIT_32B` | ROM | Shared exit: 32-byte writeback to caller's [DE+1] via EBB8H |
+| `0789H` | `PRAM_OP_WRITE_NEXT` | ROM | Paged-RAM operator write next |
+| `0794H` | `PRAM_OP_WRITE_TYPED` | ROM | Paged-RAM operator write typed |
+| `079EH` | `PRAM_OP_FIND_OPEN` | ROM | Paged-RAM operator find open |
+| `07A6H` | `PRAM_OP_CREATE` | ROM | Paged-RAM operator create |
+| `0890H` | `PRAM_REC_FIND_OPEN` | ROM | Missing PRAM_REC_* primitive |
 | `0DF9H` | `KWD_SCAN_E0` | ROM | BASIC keyword scan, token base E0 |
 | `0F2CH` | `SCROLL_BUF_SYNC` | ROM | Sync the scroll buffer (used by BASIC restart and tape scroll) |
 | `0F56H` | `PROG_END_HDL` | ROM | BASIC program end |
@@ -300,12 +315,21 @@ mirrors) at run time.
 | `63B7H` | `BAUD10_CHK` | ROM | Return Z=1 if the device is configured for baud setting 10 (9600) |
 | `63C8H` | `SOUND_NMI_TICK` | ROM | Non-maskable interrupt sound tick: feeds phase counter F864H to tone handler 770EH |
 | `63E9H` | `NMI_ALTW_ENTRY` | ROM | Alt-warm non-maskable interrupt entry |
+| `6465H` | `BISYNC_TX_ENTRY` | ROM | Transmit-side entry from the EPROM2 F801>=5 dispatch. Drives the |
 | `6500H` | `LCD_COL_QUEUE` | ROM | Queue LCD column write |
 | `6523H` | `LCD_COL_STORE` | ROM | Store col A to (RAM) |
 | `65AFH` | `DISP_FULL_INIT` | ROM | Full display + kbd + serial init: check 0F85AH |
 | `6612H` | `CHAR_SEND_INIT` | ROM | Send a character and reset the display state slots |
+| `66F1H` | `BISYNC_RX_ENTRY` | ROM | F801H==5 main-dispatch target. Clears LCD column-gate (CALL |
+| `6721H` | `BISYNC_BYTE_CLASS` | ROM | First-tier byte classifier — CP 32H (SYN) → re-arm |
+| `672FH` | `BISYNC_CTRL_FSM` | ROM | Main control-byte FSM (EBCDIC values, native) |
+| `6748H` | `BISYNC_DLE_ENTER` | ROM | DLE-received handler — swaps next-byte vector at RAM |
 | `6767H` | `CHAR_LCD_RESET` | ROM | Char output + LCD gate + KB reset |
+| `67B3H` | `BISYNC_ENQ_ABORT` | ROM | ENQ handler — DI |
+| `67C2H` | `BISYNC_GEN_DISP` | ROM | General per-byte dispatch — used as the resting handler after |
+| `67DCH` | `BISYNC_DLE_DECODE` | ROM | DLE escape decoder — installed at RAM after DLE is received |
 | `67F7H` | `KB_STATE_RESET` | ROM | Resets keyboard character-input FSM to idle state |
+| `6A71H` | `BISYNC_TX_PUMP` | ROM | Transmit byte pumper. Polls transmit-pending counter |
 | `6BC8H` | `CHAR_PAGED_CALL` | ROM | Paged character output with interrupt lock |
 | `6BDBH` | `SET_LCD_GATE_C3` | ROM | Enable the LCD column-gate 'C3' (from the gfx output path) |
 | `6BE1H` | `SET_LCD_GATE_94` | ROM | Enable the LCD column-gate '94' (companion to gate C3) |
@@ -444,6 +468,7 @@ mirrors) at run time.
 | `B144H` | `SERIAL_ECHO_TEST` | ROM | Send 55H via echo + output paths |
 | `B173H` | `TOUPPER` | ROM | Uppercase converter: if A in [61H-7AH] (a-z), RES 5,A (→ A-Z) |
 | `B188H` | `OS_MSG_STRINGS` | ROM | DEMOS message/label string table (B188H-B2CAH, data). 00-separated |
+| `B2B4H` | `BISYNC_SYS_NAME` | ROM | Bisync sys name |
 | `B2E8H` | `FILE_SET_BLK_PTR` | ROM | File: set the current block pointer |
 | `B303H` | `FILE_SAVE_BLK` | ROM | File: save the current block to RAM-disk |
 | `B309H` | `FILE_OPEN` | ROM | Dispatch paged RAM call [17] (PRAM_REC_OPEN) |
@@ -468,6 +493,7 @@ mirrors) at run time.
 | `E7DEH` | `PRAM_LDIR_12` | RAM | Copy 12 bytes within paged RAM (LDIR helper) |
 | `E7E2H` | `PRAM_LDIR_32` | RAM | Copy 32 bytes within paged RAM (LDIR helper) |
 | `E7E6H` | `PRAM_LDIR_128` | RAM | Copy 128 bytes within paged RAM (LDIR helper) |
+| `E7F9H` | `PRAM_REC_READ_NAMED` | RAM | Open a named record + read its first block. Called from EPROM2 |
 | `E81AH` | `PRAM_REC_OPEN` | RAM | Page→F852H and patch the E080H (PRAM_JP_PATCH) JP trampoline |
 | `E837H` | `PRAM_REC_REOPEN` | RAM | Re-open the most-recently-opened record without a name search |
 | `E843H` | `PRAM_REC_CREATE` | RAM | NEW named record (scans banks for an 0E5H empty slot). Returns error |
@@ -475,6 +501,8 @@ mirrors) at run time.
 | `E8C8H` | `PRAM_REC_LOAD_BLK` | RAM | FILE_LOAD_BLOCKS loop). Stores/advances a received record block |
 | `E908H` | `PRAM_REC_LOOKUP` | RAM | PRAM_REC_SEARCH + EBFDH (finalise) |
 | `E941H` | `PRAM_REC_DELETE` | RAM | Delete a record in the paged-RAM file store |
+| `E973H` | `PRAM_REC_WRITE_NEXT` | RAM | Write counterpart to PRAM_REC_READ_NEXT. (lookup |
+| `E9D7H` | `PRAM_REC_WILD_NEXT` | RAM | Advance a wildcard search to the next match (must sit between |
 | `EA28H` | `PRAM_REC_POS_INIT` | RAM | Read-cursor state (E07DH/E07EH/E07FH from E068H/E07CH) |
 | `EAC8H` | `PRAM_REC_SEARCH` | RAM | Search RAM banks (page 81H+, via 0E7EFH/0E7F5H switch + 0E887H |
 | `EADFH` | `PRAM_RET_OK` | RAM | Paged-RAM helper: return success |
@@ -485,6 +513,9 @@ mirrors) at run time.
 | `EB91H` | `PRAM_CTX_SETUP_OP` | RAM | Paged-RAM named-record store (TODO-3, 2026-05-27). The paged RAM call services operate on a |
 | `EB95H` | `PRAM_CTX_SETUP` | RAM | Attribute high-bits in the fetched arg block). Most common entry |
 | `EBA8H` | `PRAM_CTX_ARGCOPY` | RAM | Base: save DE→RAM, zero E05CH, then LDIR 0x23 bytes from the |
+| `EBC6H` | `PRAM_REC_WB_128_OUT` | RAM | Paged-RAM rec wb 128 out |
+| `EBD3H` | `PRAM_REC_RB_128_IN` | RAM | Paged-RAM rec rb 128 in |
+| `EC32H` | `PRAM_DIR_ENT_FETCH` | RAM | Primitive: copy the 32-byte directory entry from the active |
 | `EC48H` | `PRAM_BITMAP_FLUSH` | RAM | Copy the 80-byte block-allocation bitmap from CPU 0040H to its |
 | `EC5EH` | `PRAM_BLOCK_ALLOC` | RAM | Allocate a 2 KB data block: scan the 0040H bitmap (80 bytes / 640 |
 | `EC9EH` | `PRAM_BLOCK_ADDR` | RAM | Data-block index → byte address (index × 0800H |
@@ -493,6 +524,8 @@ mirrors) at run time.
 | `ED25H` | `PRAM_BLOCK_ENSURE` | RAM | Write path: ensure the cursor's 2 KB block exists — if not, allocate |
 | `ED5CH` | `PRAM_REC_WILD_BEGIN` | RAM | Begin wildcard search: save E068H (name key byte) to RAM and set |
 | `ED68H` | `PRAM_REC_WILD_END` | RAM | Restore E068H saved by PRAM_REC_WILD_BEGIN |
+| `ED71H` | `PRAM_REC_OPEN_NAMED` | RAM | Return. LD A |
+| `EDC1H` | `PRAM_REC_OPEN_COMMIT` | RAM | Companion to PRAM_REC_OPEN_NAMED |
 | `F403H` | `RAM_TOKEN_BUF` | RAM | Tokenized line buffer |
 | `F506H` | `RAM_WORK_BUF` | RAM | Work buffer (paged copy destination, 256-byte block) |
 | `F77FH` | `RAM_STACK_TOP` | RAM | Initial/reset stack pointer value (LD SP,RAM at boot/restart) |
