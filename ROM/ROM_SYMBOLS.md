@@ -109,6 +109,7 @@ mirrors) at run time.
 | `02BDH` | `NMI_FRAG_F992` | ROM | NMI handler: tiny dispatch fragment |
 | `02C3H` | `RST18_ADDR_TBL` | ROM | Address table for RST 18 BIOS-call targets |
 | `02F3H` | `RST20_ADDR_TBL` | ROM | Address table for RST 20 paged-RAM-call targets |
+| `0356H` | `SYS_OVERLAY_LOAD` | ROM | DEMOS .SYS overlay loader. Entered with DE → 11-char filename string |
 | `04DDH` | `PAGED_COLD_INIT` | ROM | Cold init for the paged-RAM window |
 | `065BH` | `SOUND_ISR_AREA` | ROM | Sound ISR area start (disasm_1983.py) |
 | `067DH` | `SOUND_ISR` | ROM | SOUND interrupt handler |
@@ -128,6 +129,9 @@ mirrors) at run time.
 | `07A6H` | `PRAM_OP_CREATE` | ROM | Paged-RAM operator create |
 | `0890H` | `PRAM_REC_FIND_OPEN` | ROM | Missing PRAM_REC_* primitive |
 | `0DF9H` | `KWD_SCAN_E0` | ROM | BASIC keyword scan, token base E0 |
+| `0E07H` | `EXPR_STK_REWIND_3` | ROM | (highest fan-in EPROM0 0368H–1FFFH sweep) |
+| `0E1CH` | `BAS_MODE_BANNER` | ROM | BAS-mode entry handler — ` |
+| `0E3BH` | `OVERLAY_RESTORE_E72A` | ROM | Paged-RAM overlay-restore primitive |
 | `0F2CH` | `SCROLL_BUF_SYNC` | ROM | Sync the scroll buffer (used by BASIC restart and tape scroll) |
 | `0F56H` | `PROG_END_HDL` | ROM | BASIC program end |
 | `0FF4H` | `BASIC_NEXT` | ROM | Interpreter NEXT loop entry |
@@ -135,8 +139,10 @@ mirrors) at run time.
 | `106EH` | `TOKEN_DISPATCH` | ROM | Token/operator handler dispatcher: read dispatch byte from (HL) |
 | `1108H` | `PRINT_PROG_STATUS` | ROM | Print interpreter status message |
 | `115CH` | `GFX_MODE_INIT` | ROM | Set cursor state + GFX mode |
+| `11D2H` | `LINE_NUM_FETCH` | ROM | BASIC line-number parser / end-of-program detect |
 | `121CH` | `LIST_PRINT_LINE` | ROM | Print one detokenised BASIC line |
 | `1245H` | `LIST_SCAN_LOOP` | ROM | LIST main scan loop: check token 1BH/1FH (skip) |
+| `12D1H` | `PROG_TEXT_FETCH` | ROM | Safe BASIC program-text fetch wrapper that |
 | `1417H` | `BASIC_PEEK` | ROM | Peek the current BASIC token without advancing |
 | `1473H` | `KWD_DISPATCH` | ROM | Dispatch a BASIC keyword via its jump table |
 | `147DH` | `EXPR_INIT` | ROM | Initialise the expression output buffer pointer |
@@ -147,10 +153,14 @@ mirrors) at run time.
 | `1724H` | `SCAN_KWD_CHK` | ROM | Scan for a keyword (helper) |
 | `1727H` | `SCAN_COMMA` | ROM | Scan for a ',' |
 | `1813H` | `EXPR_DISPATCH` | ROM | Expression evaluator token dispatcher |
+| `1994H` | `READ_STMT_HDL` | ROM | EPROM0. 3 named callees + uses EXPR_STK_REWIND_3. READ |
 | `1A5CH` | `EVAL_TWO_ARGS` | ROM | Evaluate two comma-separated floating-point arguments |
 | `1BD8H` | `PRINT_SEP_HDL` | ROM | PRINT separator handler |
+| `1C27H` | `PRINT_PAD_TO_COL` | ROM | EPROM0. Format field-width padding. ` |
 | `1C4CH` | `PRINT_SPACE` | ROM | Output a single space character |
+| `1DA1H` | `STMT_SEP_OR_END` | ROM | EPROM0. Statement separator / end check. ` |
 | `1DB1H` | `PEEK_NEXT_TOK_CP90` | ROM | Peek the *next* token (alt HL+1, no advance) and CP 90H — lookahead test |
+| `1E31H` | `READ_DATA_VARLIST` | ROM | EPROM0. 4 named callees (PARSE_DEC_INT, CHK_COMMA_FETCH |
 | `1E7FH` | `EVAL_NORM_ARG` | ROM | Evaluate an expression and normalise the result |
 | `1E9DH` | `CHK_COMMA_FETCH` | ROM | Require a comma in the BASIC source |
 | `1EA4H` | `TOKEN_FETCH` | ROM | Fetch the next BASIC token byte (advances the interpreter) |
@@ -219,7 +229,8 @@ mirrors) at run time.
 | `32F3H` | `FLOAT_ADD` | ROM | Float add primitive: align exponents + BCD-add mantissas |
 | `340AH` | `FLOAT_MUL` | ROM | Float multiply primitive |
 | `3517H` | `FLOAT_DIV` | ROM | Float divide primitive |
-| `362BH` | `DISP_MODE_MSG` | ROM | Select an EPROM5 message string by |
+| `362BH` | `DISP_REFRESH_OR_WAND` | ROM | Bimodal display refresh + WAND-overlay auto-loader |
+| `36BFH` | `PRINT_CHR_LOOP` | ROM | EPROM1. 3 named callees (EVAL_NORM_ARG, PUTCHAR, CHK_COMMA_ |
 | `3C93H` | `FP_COPY_NORM` | ROM | Floating-point copy + normalise |
 | `3E11H` | `FP_SERIES_EVAL` | ROM | Floating-point transcendental series evaluator: uses FLOAT_MUL/ADD/SUB/DIV_INNER |
 | `3E6FH` | `FP_MUL_DIV_STEP` | ROM | Floating-point multiply+divide step |
@@ -230,6 +241,7 @@ mirrors) at run time.
 | `4256H` | `PRINT_TWO_EXPR` | ROM | PRINT two comma-separated expressions |
 | `42AEH` | `STMT_KWD_EXPR` | ROM | Keyword expression statement handler |
 | `4439H` | `ALT_CHAR_OUT` | ROM | Alternate/windowed text output (PUTCHAR middle path: RAM≠0, bit7=0) |
+| `44B9H` | `PRINT_FMT_ITEM` | ROM | EPROM2. 4 named callees (PUTCHAR ×2, IS_VALUE_TOKEN |
 | `4502H` | `EVAL_COMMA_CHK` | ROM | Evaluate expression + comma check |
 | `4581H` | `FILE_STMT_PARSE` | ROM | File statement parser |
 | `4647H` | `WIN_CHAR_ROUTE` | ROM | Window/terminal output router: char → paged RAM window system |
@@ -297,11 +309,13 @@ mirrors) at run time.
 | `568AH` | `DISP_SERIAL_INIT` | ROM | Display + serial mode init |
 | `598BH` | `FMT_2DIGIT_ASCII` | ROM | Format two RTC bytes as ASCII (digits 0-9) |
 | `5A8BH` | `MENU_SERIAL_INIT` | ROM | Menu + serial mode init |
+| `5ADCH` | `TERM_INPUT_LOOP` | ROM | EPROM2. 4 named callees (KBD_POLL ×2, SERIAL_VEC_DISPATCH |
 | `5C3DH` | `STR_SCAN_CHAR` | ROM | Scan one character of a quoted string |
 | `5FDFH` | `SERIAL_BAUD_LOOKUP` | ROM | Set HL=SERIAL_BAUD_TABLE, BC=0002H, fall through to 62CFH |
 | `5FE2H` | `SERIAL_TABLE_WALK` | ROM | Entry with BC pre-loaded (stride) |
 | `5FE5H` | `SERIAL_TABLE_FETCH` | ROM | Entry with HL and BC pre-loaded |
 | `6081H` | `SOUND_MODE_INIT` | ROM | SOUND-mode init: arm Timer-0 NMI for the audio bit-banger |
+| `609CH` | `SERIAL_TIMER_INIT` | ROM | EPROM3. 4 named callees (TABLE_IDX_GET ×2, SERIAL_BAUD_LOOKUP |
 | `6136H` | `TAPE_SYS_INIT` | ROM | Tape + system init: LCD_GATE_ALL_SET |
 | `626BH` | `LCD_GATE_ALL_SET` | ROM | Enables all three LCD column-gate flags in one call |
 | `6277H` | `NMI_HOOK_INSTALL` | ROM | Install one of the NMI hook templates into the NMI shadow |
@@ -343,6 +357,7 @@ mirrors) at run time.
 | `6E7EH` | `HEX_BYTE_DISP` | ROM | Display byte A as 2 hex ASCII chars: high nibble via TAPE_SCROLL_COL |
 | `6EA1H` | `NIBBLE_TO_HEX` | ROM | Convert a 4-bit nibble to its hex ASCII character |
 | `6EABH` | `TAPE_READ_CHAR` | ROM | Read one char from tape (+ baud context save) |
+| `6EAEH` | `TAPE_TX_ABORT_LOOP` | ROM | EPROM3. Tape-transmit loop with ESC abort check. Repeats |
 | `6ED7H` | `DISP_CHAR_GFX` | ROM | Display A on LCD |
 | `6EDEH` | `TAPE_READ_HEX` | ROM | Read 2 ASCII hex nibbles from tape -> packed byte in A (C=A) |
 | `6F03H` | `INTEL_HEX_LOAD` | ROM | Intel HEX tape loader: wait ':', read addr (3 bytes), read data block |
@@ -353,7 +368,11 @@ mirrors) at run time.
 | `7008H` | `TAPE_BAUD_SAVE_B` | ROM | Save the computed tape baud parameter (alt slot) |
 | `7016H` | `BAUD_SCALE` | ROM | Scale a BCD value × 10 for tape baud computation |
 | `7034H` | `CLOCK_TICK_SCALE` | ROM | Port 42H+43H time sampling ×10: used by BAUD_SCALE + clock code |
-| `7044H` | `TAPE_RESTART` | ROM | Restart the tape state machine |
+| `7044H` | `OS_RETURN_TO_REPL` | ROM | Restart the tape state machine |
+| `704AH` | `CMD_TERM_HDL` | ROM | TERM command |
+| `704FH` | `CMD_CLCK_HDL` | ROM | CLCK command |
+| `7057H` | `CMD_COMS_HDL` | ROM | COMS command |
+| `705FH` | `BAS_MODE_INIT` | ROM | Shared BAS-entry init |
 | `7068H` | `CLR_TAPE_FLAG` | ROM | Clear the tape / serial activity flag |
 | `7073H` | `PRINT_STR` | ROM | Print $-terminated string from HL |
 | `7086H` | `GET_CURSOR` | ROM | Get the current cursor position |
@@ -378,6 +397,7 @@ mirrors) at run time.
 | `74E5H` | `CHAR_INPUT_DISP` | ROM | Char input dispatcher (keyboard / serial routing) |
 | `7503H` | `KBD_CURSOR_DISP` | ROM | Display the keyboard-driven cursor |
 | `770EH` | `SOUND_STOP_CHK` | ROM | Pops return addr when sound finishes |
+| `7734H` | `TAPE_BAUD_PROG_INIT` | ROM | EPROM3. 3 named callees (TEST_MODE_FA56, KBD_CURSOR_DISP |
 | `779CH` | `DISP_KBD_CYCLE` | ROM | Display+kbd combined scan wrapper |
 | `77A9H` | `COMMS_ACTIVATE` | ROM | Activate serial/comms terminal |
 | `781DH` | `BATT_LOW_STR` | ROM | Stored 'Warning - batteries are low' message (data) |
@@ -399,6 +419,7 @@ mirrors) at run time.
 | `8394H` | `SERIAL_IO_INIT` | ROM | Serial/comms init |
 | `8543H` | `CHK_ASCII_DIGIT` | ROM | Check whether ASCII char A is a digit 0-9 (returns the value) |
 | `869CH` | `EVAL_ARG_COMMA` | ROM | Evaluate argument + optional comma |
+| `86E8H` | `PRINT_SPC_HDL` | ROM | EPROM4. PRINT SPC(n) function handler. `EXX |
 | `87D1H` | `PARSE_ADDR_ARGS` | ROM | Parse address expression args |
 | `8ACFH` | `BASIC_HALT_LOOP` | ROM | Main BASIC idle |
 | `8AE4H` | `SERIAL_WAKEUP` | ROM | Wake-up from interrupt when serial activity is detected |
@@ -412,21 +433,36 @@ mirrors) at run time.
 | `8C38H` | `LCD_HD61830_INIT` | ROM | Initialise the HD61830 LCD controller |
 | `8CBBH` | `LCD_ADDR_CALC` | ROM | Compute VRAM byte offset + bit: row×30 (via REPEAT_ADD) + col>>3 = HL |
 | `8CD7H` | `LCD_PIXEL_SET` | ROM | Pixel bounds check (H<F0H, L<40H) + LCD_ADDR_CALC + LCD cursor write |
+| `8D01H` | `GFX_PIXEL_AT_SAVED` | ROM | Set a pixel at the saved (RAM) coords |
+| `8D0BH` | `GFX_PARSE_COMMA_ARG` | ROM | Parse `,<expression>` from BASIC source |
 | `8D19H` | `PSET_STMT_HDL` | ROM | PSET/PRESET statement handler |
-| `8D72H` | `DRAW_STMT_HDL` | ROM | DRAW statement handler |
+| `8D61H` | `GFX_DIV64_HELPER` | ROM | Gfx div64 helper |
+| `8E3DH` | `GFX_PIXEL_LOOP_N` | ROM | Set pixel + DJNZ helper |
+| `8E8AH` | `GFX_PIXEL_LOOP_INNER` | ROM | Set pixel + restore stack + inner-loop |
 | `8E92H` | `LCD_PIXEL_ROW` | ROM | LCD pixel row |
-| `8FD8H` | `LINE_HDL` | ROM | LINE statement handler |
+| `8EB0H` | `LINE_STMT_HDL` | ROM | Line statement hdl |
+| `8FD3H` | `GFX_PIXEL_AT_POP` | ROM | Simplest pixel-set wrapper |
+| `8FD8H` | `LINE_BOX_SUFFIX_HDL` | ROM | LINE statement handler |
+| `9036H` | `LINE_BOX_HORIZ_EDGES` | ROM | LINE box outline — top + bottom horizontal edges. Iterates |
+| `9050H` | `LINE_BOX_VERT_EDGES` | ROM | LINE box outline — left + right vertical edges. Iterates |
+| `9075H` | `LINE_BOX_EXIT` | ROM | LINE box / fill common exit — POP HL |
+| `907FH` | `LINE_BOX_FILL` | ROM | LINE BF mode — solid rectangle fill. LD B,xstart |
 | `90A3H` | `LCD_COORD_PARSE` | ROM | LCD coordinate parse |
 | `917FH` | `LCD_SET_ADDR` | ROM | Write a 16-bit value to LCD controller address regs 0AH/0BH |
 | `9403H` | `REPEAT_ADD` | ROM | Multiply: HL = DE × A (repeated-add) |
 | `94BDH` | `CRLF_REPEAT_HDL` | ROM | Handle the BASIC CR/LF repeat sequence |
 | `9607H` | `STATE_SAVE_FRAG` | ROM | State save fragment |
+| `9677H` | `EDITOR_MODE_ENTER` | ROM | EPROM4. Editor mode entry routine. Called from CMD_EDIT_HDL |
 | `9711H` | `LIST_LINE_RENDER` | ROM | Render one BASIC listing line: load/save RAM around LIST_DISPLAY_SCAN |
 | `971DH` | `LIST_DISPLAY_SCAN` | ROM | Scan the display buffer while rendering a LIST line |
+| `98E8H` | `LIST_PAGE_HDR_OUT` | ROM | EPROM4. 4 named callees + fan-in=2. LIST page-header emit |
+| `9930H` | `LIST_STMT_HDL` | ROM | EPROM4. LIST statement main handler with sub-command |
+| `9A4FH` | `LIST_NL_RENDER` | ROM | EPROM4. 4 named callees (PUTCHAR_CR, CHECK_WIDTH_6, STATE |
 | `9A78H` | `LIST_RENDER_SCREEN` | ROM | Render a full screenful of LIST output |
 | `9ADCH` | `DISP_BUF_CHK` | ROM | Check the display buffer is in sync |
 | `9B6AH` | `LIST_PAGE_BODY` | ROM | Body of one LIST output page |
 | `9C13H` | `PUTCHAR_B7` | ROM | Preset B=7 then dispatch to PUTCHAR |
+| `9C27H` | `LIST_SCROLL_RESYNC` | ROM | EPROM4. LIST scroll re-render after position change |
 | `9C7DH` | `CMP_HL_DE` | ROM | Compare HL with DE |
 | `9DD8H` | `LIST_FF_EMIT` | ROM | LIST form-feed emit (B=06) |
 | `9DF8H` | `STR_EMIT_PAIR` | ROM | Emit a pair of stacked characters |
@@ -455,20 +491,26 @@ mirrors) at run time.
 | `A808H` | `CMD_PROMPT` | ROM | Main BASIC command REPL |
 | `A8D3H` | `EDIT_VECS_LOAD` | ROM | Load the edit-mode paged-RAM vector table |
 | `A8FEH` | `PRAM_CHAR_DISP` | ROM | Paged-RAM character + display helper |
+| `A907H` | `CMD_EDIT_HDL` | ROM | EDIT command |
+| `A9ECH` | `CMD_MON_HDL` | ROM | MON command |
 | `A9F6H` | `CMD_TABLE_SCAN` | ROM | Scan command table at DE vs tokenised input at HL ( per char) |
 | `AACEH` | `SET_TAPE_FLAGS` | ROM | Set the tape activity flags |
 | `AADBH` | `SKIP_PARSE_STR` | ROM | Skip / parse a string in the input line |
 | `AAFFH` | `SKIP_SPACES` | ROM | Advance HL past 0x20 spaces: while (HL)==20H { INC HL } |
 | `AB0DH` | `LINE_BUF_CLEAR` | ROM | Fill E080H..E0FFH (128 bytes) with 0x20 (space) |
+| `AB18H` | `CMD_BAS_HDL` | ROM | BAS command |
 | `AB36H` | `TAPE_HDR_BUILD` | ROM | Build tape file header at F87CH |
 | `ACBDH` | `SKIP_DISP_OUT` | ROM | Skip spaces + display output |
 | `AD71H` | `TAPE_LLOAD` | ROM | Tape LLOAD command handler |
 | `ADBBH` | `CMD_DIR` | ROM | DIR command handler |
 | `AFC3H` | `PRINT_STR_GATE` | ROM | Print a string through the output gate |
 | `B144H` | `SERIAL_ECHO_TEST` | ROM | Send 55H via echo + output paths |
+| `B14FH` | `OS_SYS_MENU_LIST` | ROM | Display the system app menu — walks OS_SYS_NAMES_TBL: copies |
 | `B173H` | `TOUPPER` | ROM | Uppercase converter: if A in [61H-7AH] (a-z), RES 5,A (→ A-Z) |
 | `B188H` | `OS_MSG_STRINGS` | ROM | DEMOS message/label string table (B188H-B2CAH, data). 00-separated |
-| `B2B4H` | `BISYNC_SYS_NAME` | ROM | Bisync sys name |
+| `B243H` | `OS_SYS_NAMES_TBL` | ROM | Startup-menu display list — 5 × 11-byte names with |
+| `B27BH` | `OS_DRV_OVERLAY_TBL` | ROM | Registry of real loadable .sys overlays — 5 × 12-byte |
+| `B2CBH` | `BISYNC_OVERLAY_LOAD` | ROM | Load + dispatch BISYNC.SYS overlay (called from EPROM3 |
 | `B2E8H` | `FILE_SET_BLK_PTR` | ROM | File: set the current block pointer |
 | `B303H` | `FILE_SAVE_BLK` | ROM | File: save the current block to RAM-disk |
 | `B309H` | `FILE_OPEN` | ROM | Dispatch paged RAM call [17] (PRAM_REC_OPEN) |
