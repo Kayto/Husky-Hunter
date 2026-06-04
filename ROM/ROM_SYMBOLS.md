@@ -132,7 +132,7 @@ mirrors) at run time.
 | `0E07H` | `EXPR_STK_REWIND_3` | ROM | (highest fan-in EPROM0 0368H–1FFFH sweep) |
 | `0E1CH` | `BAS_MODE_BANNER` | ROM | BAS-mode entry handler — ` |
 | `0E3BH` | `OVERLAY_RESTORE_E72A` | ROM | Paged-RAM overlay-restore primitive |
-| `0F2CH` | `SCROLL_BUF_SYNC` | ROM | Sync the scroll buffer (used by BASIC restart and tape scroll) |
+| `0F2CH` | `KEY_BUF_FLUSH` | ROM | Sync the scroll buffer (used by BASIC restart and tape scroll) |
 | `0F56H` | `PROG_END_HDL` | ROM | BASIC program end |
 | `0FF4H` | `BASIC_NEXT` | ROM | Interpreter NEXT loop entry |
 | `0FFDH` | `STMT_EXEC` | ROM | BASIC statement executor — the most-called interpreter routine |
@@ -224,7 +224,17 @@ mirrors) at run time.
 | `2F39H` | `PUTCHAR_CRLF` | ROM | Emit CR through the output gate |
 | `2F3CH` | `PUTCHAR_GATE` | ROM | Output gate — suppresses output when the gate flag is set |
 | `2F54H` | `PUTCHAR_CR` | ROM | Output a CR (carriage return) character |
+| `314CH` | `BCD_DIV_C_TO_ASCII` | ROM | Divmod loop |
+| `3156H` | `FP_EMIT_DIGIT` | ROM | LD A,(HL) |
+| `3160H` | `FP_EMIT_MINUS` | ROM | Floating-point emit minus |
+| `3164H` | `FP_EMIT_ZERO` | ROM | Floating-point emit zero |
+| `3168H` | `FP_EMIT_SPACE` | ROM | Floating-point emit space |
+| `316CH` | `FP_EMIT_DOT` | ROM | Falls through to CHAR_OUT_BUF |
 | `316EH` | `CHAR_OUT_BUF` | ROM | Check 0F7CEH: if 0 → (direct) |
+| `3180H` | `STR_TO_FLOAT` | ROM | ASCII-string → float parser entry. PUSH HL/DE |
+| `3213H` | `FP_PARSE_FETCH` | ROM | LD HL |
+| `321FH` | `IS_DEC_DIGIT` | ROM | Is dec digit |
+| `3240H` | `MEMSET_C_BYTES_A` | ROM | Memset c bytes a |
 | `32E6H` | `FLOAT_SUB` | ROM | Float subtract primitive: negate mantissa then add |
 | `32F3H` | `FLOAT_ADD` | ROM | Float add primitive: align exponents + BCD-add mantissas |
 | `340AH` | `FLOAT_MUL` | ROM | Float multiply primitive |
@@ -240,6 +250,7 @@ mirrors) at run time.
 | `40E0H` | `POW_OP` | ROM | Power operator (token E1H = `**` or `^`, prec=12) |
 | `4256H` | `PRINT_TWO_EXPR` | ROM | PRINT two comma-separated expressions |
 | `42AEH` | `STMT_KWD_EXPR` | ROM | Keyword expression statement handler |
+| `4379H` | `EDITOR_FILE_READER` | ROM | Editor file reader |
 | `4439H` | `ALT_CHAR_OUT` | ROM | Alternate/windowed text output (PUTCHAR middle path: RAM≠0, bit7=0) |
 | `44B9H` | `PRINT_FMT_ITEM` | ROM | EPROM2. 4 named callees (PUTCHAR ×2, IS_VALUE_TOKEN |
 | `4502H` | `EVAL_COMMA_CHK` | ROM | Evaluate expression + comma check |
@@ -254,9 +265,11 @@ mirrors) at run time.
 | `4709H` | `NOT_OP` | ROM | NOT operator (token F3H, prec=13) |
 | `4793H` | `EQV_OP` | ROM | EQV operator (token F0H, prec=2) |
 | `479DH` | `IMP_OP` | ROM | IMP operator (token F2H, prec=2) |
+| `47B4H` | `NMI_TX_BIT_OUT` | ROM | NMI transmit bit out |
 | `482AH` | `MACHINE_TYPE_DETECT` | ROM | Machine type detection |
 | `4859H` | `WARM_INIT` | ROM | Main application init: clear RAM, reset SP=RAM, init RAM flags |
 | `48B6H` | `DISP_KBD_INIT` | ROM | Display + keyboard init sequence |
+| `48E6H` | `LOAD_COMPLETE_SPLASH` | ROM | Post-load splash painter — falls into LOAD_COMPLETE_RST |
 | `4940H` | `LOAD_COMPLETE_RST` | ROM | Post-load completion: redraw menu + scan keyboard |
 | `4953H` | `TIMER_B_INIT` | ROM | Initialise NSC810 Timer B (used by the keyboard / sound tick) |
 | `4969H` | `BASIC_STARTUP` | ROM | BASIC start-up routine (called after warm-init) |
@@ -306,7 +319,7 @@ mirrors) at run time.
 | `54A8H` | `GFX_CHAR_OUT` | ROM | Bitmap char renderer (PUTCHAR gfx path: RAM bit7=1) |
 | `564EH` | `PIXEL_COL_WRITE` | ROM | LCD controller pixel column writer |
 | `565AH` | `LCD_COL_PIXEL` | ROM | Inner column write |
-| `568AH` | `DISP_SERIAL_INIT` | ROM | Display + serial mode init |
+| `568AH` | `DISP_INIT_BEEP_CYCLE` | ROM | Display + serial mode init |
 | `598BH` | `FMT_2DIGIT_ASCII` | ROM | Format two RTC bytes as ASCII (digits 0-9) |
 | `5A8BH` | `MENU_SERIAL_INIT` | ROM | Menu + serial mode init |
 | `5ADCH` | `TERM_INPUT_LOOP` | ROM | EPROM2. 4 named callees (KBD_POLL ×2, SERIAL_VEC_DISPATCH |
@@ -314,6 +327,7 @@ mirrors) at run time.
 | `5FDFH` | `SERIAL_BAUD_LOOKUP` | ROM | Set HL=SERIAL_BAUD_TABLE, BC=0002H, fall through to 62CFH |
 | `5FE2H` | `SERIAL_TABLE_WALK` | ROM | Entry with BC pre-loaded (stride) |
 | `5FE5H` | `SERIAL_TABLE_FETCH` | ROM | Entry with HL and BC pre-loaded |
+| `6021H` | `SOUND_BOOT_INIT` | ROM | Sound boot init |
 | `6081H` | `SOUND_MODE_INIT` | ROM | SOUND-mode init: arm Timer-0 NMI for the audio bit-banger |
 | `609CH` | `SERIAL_TIMER_INIT` | ROM | EPROM3. 4 named callees (TABLE_IDX_GET ×2, SERIAL_BAUD_LOOKUP |
 | `6136H` | `TAPE_SYS_INIT` | ROM | Tape + system init: LCD_GATE_ALL_SET |
@@ -334,6 +348,7 @@ mirrors) at run time.
 | `6523H` | `LCD_COL_STORE` | ROM | Store col A to (RAM) |
 | `65AFH` | `DISP_FULL_INIT` | ROM | Full display + kbd + serial init: check 0F85AH |
 | `6612H` | `CHAR_SEND_INIT` | ROM | Send a character and reset the display state slots |
+| `661AH` | `V24_INIT` | ROM | V24 init |
 | `66F1H` | `BISYNC_RX_ENTRY` | ROM | F801H==5 main-dispatch target. Clears LCD column-gate (CALL |
 | `6721H` | `BISYNC_BYTE_CLASS` | ROM | First-tier byte classifier — CP 32H (SYN) → re-arm |
 | `672FH` | `BISYNC_CTRL_FSM` | ROM | Main control-byte FSM (EBCDIC values, native) |
@@ -392,13 +407,15 @@ mirrors) at run time.
 | `73A0H` | `COL_BOUNDARY_CHK` | ROM | Test HL vs 40-col multiples (0x28/0x50/0x78/0xA0/0xC8/0xF0/0x18/0x40) |
 | `73C5H` | `GETCHAR_ECHO` | ROM | Get char from serial/kbd |
 | `73DAH` | `LCD_COL_WRITE` | ROM | Low-level LCD pixel column write |
-| `748AH` | `TAPE_SCROLL_COL` | ROM | Scroll one LCD column using circular ticker-tape buffer at DFB0H/DFB2H |
-| `74ACH` | `SCROLL_COL_WRITE` | ROM | Write A to circular scroll ticker-tape buffer |
+| `748AH` | `DISP_KEY_TICK` | ROM | Display key tick |
+| `7495H` | `KEY_BUF_DEQUEUE` | ROM | Inner dequeue from the 32-byte circular keyboard input buffer |
+| `74ACH` | `KEY_BUF_ENQUEUE` | ROM | Inner enqueue into the 32-byte circular keyboard input buffer |
 | `74E5H` | `CHAR_INPUT_DISP` | ROM | Char input dispatcher (keyboard / serial routing) |
 | `7503H` | `KBD_CURSOR_DISP` | ROM | Display the keyboard-driven cursor |
+| `7662H` | `INPUT_WAIT_LOOP` | ROM | Input wait loop |
 | `770EH` | `SOUND_STOP_CHK` | ROM | Pops return addr when sound finishes |
 | `7734H` | `TAPE_BAUD_PROG_INIT` | ROM | EPROM3. 3 named callees (TEST_MODE_FA56, KBD_CURSOR_DISP |
-| `779CH` | `DISP_KBD_CYCLE` | ROM | Display+kbd combined scan wrapper |
+| `779CH` | `DISP_KBD_CYCLE` | ROM | Display keyboard cycle |
 | `77A9H` | `COMMS_ACTIVATE` | ROM | Activate serial/comms terminal |
 | `781DH` | `BATT_LOW_STR` | ROM | Stored 'Warning - batteries are low' message (data) |
 | `7875H` | `KBD_REPEAT_STATE` | ROM | Keyboard repeat/debounce state |
@@ -416,7 +433,10 @@ mirrors) at run time.
 | `7CD6H` | `KWD_SCAN_CMP` | ROM | Inner loop of the BASIC keyword scanner |
 | `7F07H` | `SERIAL_FLUSH_CHK` | ROM | Check whether the serial output buffer needs to drain |
 | `819CH` | `BREAK_SET` | ROM | Power up the RS-232 driver chip (sets the BREAK output) |
-| `8394H` | `SERIAL_IO_INIT` | ROM | Serial/comms init |
+| `8394H` | `SYS_BEEP` | ROM | Sys beep |
+| `83CAH` | `SOUND_STMT_HDL` | ROM | BASIC `SOUND tone,duration` statement handler |
+| `83DEH` | `SOUND_BITBANG_LOOP` | ROM | Sound bitbang loop |
+| `83F6H` | `DELAY_HL_CYCLES` | ROM | Pure CPU-cycle delay |
 | `8543H` | `CHK_ASCII_DIGIT` | ROM | Check whether ASCII char A is a digit 0-9 (returns the value) |
 | `869CH` | `EVAL_ARG_COMMA` | ROM | Evaluate argument + optional comma |
 | `86E8H` | `PRINT_SPC_HDL` | ROM | EPROM4. PRINT SPC(n) function handler. `EXX |
@@ -431,12 +451,15 @@ mirrors) at run time.
 | `8C04H` | `HW_STARTUP_INIT` | ROM | Hardware startup init (subset of ENV_INIT) |
 | `8C28H` | `LCD_RESET_SEQ` | ROM | LCD reset + serial flush sequence |
 | `8C38H` | `LCD_HD61830_INIT` | ROM | Initialise the HD61830 LCD controller |
+| `8C66H` | `FONT_MODE_RESET` | ROM | Clears RAM_COMMS_ST5 (back to mode 0 = font1) and RAM. Called |
+| `8C95H` | `DISP_HOME_OR_CLEAR` | ROM | Display home or clear |
 | `8CBBH` | `LCD_ADDR_CALC` | ROM | Compute VRAM byte offset + bit: row×30 (via REPEAT_ADD) + col>>3 = HL |
 | `8CD7H` | `LCD_PIXEL_SET` | ROM | Pixel bounds check (H<F0H, L<40H) + LCD_ADDR_CALC + LCD cursor write |
 | `8D01H` | `GFX_PIXEL_AT_SAVED` | ROM | Set a pixel at the saved (RAM) coords |
 | `8D0BH` | `GFX_PARSE_COMMA_ARG` | ROM | Parse `,<expression>` from BASIC source |
 | `8D19H` | `PSET_STMT_HDL` | ROM | PSET/PRESET statement handler |
 | `8D61H` | `GFX_DIV64_HELPER` | ROM | Gfx div64 helper |
+| `8DCFH` | `CIRCLE_DRAW_8OCT` | ROM | Circle draw 8oct |
 | `8E3DH` | `GFX_PIXEL_LOOP_N` | ROM | Set pixel + DJNZ helper |
 | `8E8AH` | `GFX_PIXEL_LOOP_INNER` | ROM | Set pixel + restore stack + inner-loop |
 | `8E92H` | `LCD_PIXEL_ROW` | ROM | LCD pixel row |
@@ -448,9 +471,23 @@ mirrors) at run time.
 | `9075H` | `LINE_BOX_EXIT` | ROM | LINE box / fill common exit — POP HL |
 | `907FH` | `LINE_BOX_FILL` | ROM | LINE BF mode — solid rectangle fill. LD B,xstart |
 | `90A3H` | `LCD_COORD_PARSE` | ROM | LCD coordinate parse |
-| `917FH` | `LCD_SET_ADDR` | ROM | Write a 16-bit value to LCD controller address regs 0AH/0BH |
+| `9158H` | `FONT_MODE_DISPATCH` | ROM | Font mode dispatch |
+| `9172H` | `FONT_STAGE_CLEAR` | ROM | Font stage clear |
+| `917FH` | `LCD_STAGE_FLUSH` | ROM | LCD stage flush |
+| `91ACH` | `PIXEL_DOUBLE` | ROM | Bit-doubler |
+| `9253H` | `FONT2_RENDER_NARROW_RAW` | ROM | Mode 1 (RAM=1). CR check → L_92ADH |
+| `92B2H` | `FONT2_BLIT_DESC_TEST_NARROW` | ROM | Sibling of FONT2_BLIT_DESC_TEST with |
+| `92C5H` | `FONT2_RENDER_NARROW_2X` | ROM | Mode 2 (RAM=2). CR check |
+| `9324H` | `FONT2_RENDER_WIDE_RAW` | ROM | Mode 3 (RAM=3). CR check |
+| `9368H` | `FONT2_GLYPH_ADDR` | ROM | Glyph address calculator |
+| `937AH` | `FONT2_BLIT_DESC_TEST` | ROM | Font2 blit desc test |
+| `938AH` | `FONT2_CURSOR_OFFSET` | ROM | Shared tail |
+| `9390H` | `FONT2_RENDER_LEFT` | ROM | Mode 4 (RAM=4), pass 1: LEFT half of pixel-doubled font2 glyph |
+| `93D6H` | `FONT2_RENDER_RIGHT` | ROM | Mode 4 (RAM=4), pass 2: RIGHT half of pixel-doubled font2 glyph |
+| `9401H` | `MUL_HL_BY_9` | ROM | HL = HL × 9 (font2 stride helper). Used by FONT2_GLYPH_ADDR |
 | `9403H` | `REPEAT_ADD` | ROM | Multiply: HL = DE × A (repeated-add) |
-| `94BDH` | `CRLF_REPEAT_HDL` | ROM | Handle the BASIC CR/LF repeat sequence |
+| `9424H` | `SCREEN_STMT_HDL` | ROM | BASIC `SCREEN n` statement handler. EVAL_NORM_ARG to get mode in E |
+| `94BDH` | `CELL_TO_VRAM_ADDR` | ROM | Handle the BASIC CR/LF repeat sequence |
 | `9607H` | `STATE_SAVE_FRAG` | ROM | State save fragment |
 | `9677H` | `EDITOR_MODE_ENTER` | ROM | EPROM4. Editor mode entry routine. Called from CMD_EDIT_HDL |
 | `9711H` | `LIST_LINE_RENDER` | ROM | Render one BASIC listing line: load/save RAM around LIST_DISPLAY_SCAN |
@@ -461,6 +498,8 @@ mirrors) at run time.
 | `9A78H` | `LIST_RENDER_SCREEN` | ROM | Render a full screenful of LIST output |
 | `9ADCH` | `DISP_BUF_CHK` | ROM | Check the display buffer is in sync |
 | `9B6AH` | `LIST_PAGE_BODY` | ROM | Body of one LIST output page |
+| `9BD5H` | `BASIC_INTERP_STEP` | ROM | The real BASIC interpreter step entry, 6 bytes past L_9BCAH (the |
+| `9BE7H` | `BASIC_LIST_ROW_RENDER` | ROM | LIST output row-render path |
 | `9C13H` | `PUTCHAR_B7` | ROM | Preset B=7 then dispatch to PUTCHAR |
 | `9C27H` | `LIST_SCROLL_RESYNC` | ROM | EPROM4. LIST scroll re-render after position change |
 | `9C7DH` | `CMP_HL_DE` | ROM | Compare HL with DE |
@@ -520,6 +559,8 @@ mirrors) at run time.
 | `B42AH` | `RTC_TICK_POLL` | ROM | Watch the real-time clock for a tick and redraw the on-screen clock |
 | `B43AH` | `LCD_FONT` | ROM | LCD character font — standard 7-row ASCII glyphs |
 | `B6DAH` | `LCD_FONT2` | ROM | LCD character font — taller 9-row alternate glyphs (menus) |
+| `DFB0H` | `RAM_KEY_BUF_WR_PTR` | RAM | Write-pointer (low byte) into the 32-byte circular keyboard input |
+| `DFB2H` | `RAM_KEY_BUF_RD_PTR` | RAM | Read-pointer (low byte) into the 32-byte circular keyboard input |
 | `E05CH` | `PRAM_STR_BUF` | RAM | Paged RAM string buffer start (dest of ALT_CHAR_OUT 11H path) |
 | `E068H` | `PRAM_STR_BUF_B` | RAM | Paged RAM string buffer B (cleared by A5DDH init) |
 | `E080H` | `PRAM_JP_PATCH` | RAM | Paged RAM JP trampoline patch target (→D706H, patched with 0C3H) |
@@ -552,7 +593,7 @@ mirrors) at run time.
 | `EB57H` | `PRAM_BLK_READ` | RAM | Read 128 bytes from the current record block (RAM_BLK_PTR) → E080H |
 | `EB6BH` | `PRAM_BLK_WRITE` | RAM | Write 128 bytes from E080H → the current record block (RAM_BLK_PTR) |
 | `EB7FH` | `PRAM_REC_CLOSE_ALL` | RAM | Walk the open-record context list (RAM_PAGED_CTX/F80BH) calling |
-| `EB91H` | `PRAM_CTX_SETUP_OP` | RAM | Paged-RAM named-record store (TODO-3, 2026-05-27). The paged RAM call services operate on a |
+| `EB91H` | `PRAM_CTX_SETUP_OP` | RAM | Paged-RAM named-record store. The paged RAM call services operate on a |
 | `EB95H` | `PRAM_CTX_SETUP` | RAM | Attribute high-bits in the fetched arg block). Most common entry |
 | `EBA8H` | `PRAM_CTX_ARGCOPY` | RAM | Base: save DE→RAM, zero E05CH, then LDIR 0x23 bytes from the |
 | `EBC6H` | `PRAM_REC_WB_128_OUT` | RAM | Paged-RAM rec wb 128 out |
@@ -594,8 +635,8 @@ mirrors) at run time.
 | `F985H` | `RAM_SER_BUF_LIM` | RAM | Serial input buffer limit |
 | `F987H` | `RAM_SER_BUF_PTR` | RAM | Serial input buffer pointer |
 | `F990H` | `RAM_ICR_ACTIVE` | RAM | Active interrupt mask value (OUT to set interrupt mask |
-| `F992H` | `RAM_PAGE_SAVE` | RAM | Saved page register for the PAGE_RESTORE convention (TODO-C, 2026-05-26) |
-| `F999H` | `RAM_RX_CHAR_VEC` | RAM | Serial receive per-character dispatch vector (TODO-C3, 2026-05-28) |
+| `F992H` | `RAM_PAGE_SAVE` | RAM | Saved page register for the PAGE_RESTORE convention |
+| `F999H` | `RAM_RX_CHAR_VEC` | RAM | Serial receive per-character dispatch vector |
 | `F99FH` | `RAM_RX_VEC2` | RAM | Second serial dispatch vector, set alongside RAM_RX_CHAR_VEC by the |
 | `FA1CH` | `RAM_CURSOR_COL` | RAM | Cursor column (editor RAM |
 | `FA1EH` | `RAM_CURSOR_ROW` | RAM | Scroll-row / cursor-row (RAM:RAM pair) |
@@ -606,11 +647,14 @@ mirrors) at run time.
 | `FA39H` | `RAM_DISP_COL` | RAM | Current display column counter |
 | `FA3BH` | `RAM_DISP_ROW` | RAM | Current display row counter |
 | `FA41H` | `RAM_DISP_PTR` | RAM | Display pointer (16-bit) |
-| `FA4DH` | `RAM_CPOS_HI` | RAM | Cursor set-position high byte (row) |
-| `FA4EH` | `RAM_CPOS_LO` | RAM | Cursor set-position low byte (col) |
+| `FA4DH` | `RAM_CPOS_HI` | RAM | Cursor set-position high byte = **X coordinate (LCD pixel column |
+| `FA4EH` | `RAM_CPOS_LO` | RAM | Cursor set-position low byte = **Y coordinate (LCD pixel row |
 | `FA51H` | `RAM_COMMS_ST1` | RAM | Comms terminal state byte 1 (saved/restored by COMMS_ACTIVATE) |
 | `FA53H` | `RAM_COMMS_ST3` | RAM | Comms terminal state byte 3 |
-| `FA55H` | `RAM_COMMS_ST5` | RAM | Comms terminal state byte 5 |
+| `FA55H` | `RAM_COMMS_ST5` | RAM | RAM comms st5 |
+| `FA57H` | `RAM_SPLASH_MODE` | RAM | RAM splash mode |
+| `FA58H` | `RAM_FONT_STAGE_BUF` | RAM | RAM font stage buffer |
+| `FA73H` | `RAM_INV_VIDEO` | RAM | Inverse-video XOR byte. LCD_STAGE_FLUSH XORs every staged |
 | `FA7AH` | `RAM_LOAD_ADDR` | RAM | Current load address for Intel HEX / binary load |
 | `FA83H` | `RAM_EXPR_MODE` | RAM | Expression mode / token dispatch state byte |
 | `FA85H` | `RAM_EXPR_STK_BASE` | RAM | Expression evaluation stack base pointer (16-bit) |
@@ -623,7 +667,7 @@ mirrors) at run time.
 | `FCF0H` | `RAM_DISP_VEC_HI` | RAM | Display output vector high byte |
 | `FCF9H` | `RAM_CHAR_ROUTE` | RAM | CHAR_OUT routing: 0=text, bit7=gfx, else=alt-window |
 | `FCFDH` | `RAM_MENU_CTX` | RAM | Menu context active flag |
-| `FDD6H` | `RAM_SCRATCH_FDD6` | RAM | Shared transient scratch slot (TODO-B resolved 2026-05-26) |
+| `FDD6H` | `RAM_SCRATCH_FDD6` | RAM | Shared transient scratch slot |
 | `FDD9H` | `RAM_BLK_PTR` | RAM | Pointer to the current RAM-disk data block |
 | `FDFAH` | `RAM_MENU_REENTR` | RAM | Menu re-entrancy guard (L_7BF2H) |
 | `FDFBH` | `TIMER_AB_ISR` | RAM | Timer A/B common ISR entry (SOUND_DEV.md / 0xFDFB file) |
