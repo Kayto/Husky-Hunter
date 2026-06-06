@@ -247,6 +247,7 @@ mirrors) at run time.
 | `362BH` | `DISP_REFRESH_OR_WAND` | ROM | Bimodal display refresh + WAND-overlay auto-loader |
 | `36BFH` | `PRINT_CHR_LOOP` | ROM | EPROM1. 3 named callees (EVAL_NORM_ARG, PUTCHAR, CHK_COMMA_ |
 | `3C93H` | `FP_COPY_NORM` | ROM | Floating-point copy + normalise |
+| `3D18H` | `FP_LOAD_CONST_3D2F` | ROM | LD HL,3D2FH |
 | `3E11H` | `FP_SERIES_EVAL` | ROM | Floating-point transcendental series evaluator: uses FLOAT_MUL/ADD/SUB/DIV_INNER |
 | `3E6FH` | `FP_MUL_DIV_STEP` | ROM | Floating-point multiply+divide step |
 | `3F21H` | `FP_COPY_SUB` | ROM | Floating-point copy + subtract |
@@ -503,6 +504,7 @@ mirrors) at run time.
 | `9403H` | `REPEAT_ADD` | ROM | Multiply: HL = DE × A (repeated-add) |
 | `9424H` | `SCREEN_STMT_HDL` | ROM | BASIC `SCREEN n[,m]` statement handler. EVAL_NORM_ARG to get mode |
 | `94BDH` | `CELL_TO_VRAM_ADDR` | ROM | Handle the BASIC CR/LF repeat sequence |
+| `9601H` | `DISP_CURSOR_HOME` | ROM | LD HL,95FDH |
 | `9607H` | `STATE_SAVE_FRAG` | ROM | State save fragment |
 | `9677H` | `EDITOR_MODE_ENTER` | ROM | EPROM4. Editor mode entry routine. Called from CMD_EDIT_HDL |
 | `9711H` | `LIST_LINE_RENDER` | ROM | Render one BASIC listing line: load/save RAM around LIST_DISPLAY_SCAN |
@@ -522,6 +524,7 @@ mirrors) at run time.
 | `9DF8H` | `STR_EMIT_PAIR` | ROM | Emit a pair of stacked characters |
 | `9EE1H` | `LIST_FF_HDR` | ROM | LIST form-feed header (B=0F) |
 | `9EFEH` | `LIST_COL_EMIT` | ROM | LIST column prefix emitter |
+| `A192H` | `DISP_HEADER_CLEAR` | ROM | Clear the screen header area, then advance to next row |
 | `A4AAH` | `PUTCHAR_FF` | ROM | Init the display before form-feed output |
 | `A4AFH` | `PUTCHAR_SP` | ROM | Output a space for whitespace padding |
 | `A4B3H` | `CHECK_WIDTH_6` | ROM | Check current line width against the limit |
@@ -573,6 +576,7 @@ mirrors) at run time.
 | `B303H` | `FILE_SAVE_BLK` | ROM | File: save the current block to RAM-disk |
 | `B309H` | `FILE_OPEN` | ROM | Dispatch paged RAM call [17] (PRAM_REC_OPEN) |
 | `B314H` | `FILE_LOAD_BLK` | ROM | File: load the current block from RAM-disk |
+| `B31AH` | `CMD_PARSE_ARG_EOL` | ROM | Cmd parse arg eol |
 | `B408H` | `LCD_CLR_CMD` | ROM | LCD controller LCD clear cmd pair |
 | `B412H` | `LCD_CLR_SCREEN` | ROM | Full screen clear |
 | `B42AH` | `RTC_TICK_POLL` | ROM | Watch the real-time clock for a tick and redraw the on-screen clock |
