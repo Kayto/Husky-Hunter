@@ -10,6 +10,7 @@ Dev/elta/elta_sim.py
 Dev/elta/ELTA2.BAS
 Dev/elta/ELTAC.BAS
 Dev/elta/ELTAC.HBA
+!Dev/ROMDUMP
 
 # Z80 assembler binaries (folder tracked, contents ignored)
 Assembler/*
