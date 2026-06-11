@@ -73,7 +73,9 @@ mirrors) at run time.
 | `0018H` | `RST_18` | ROM | Restart vector 18 — main BIOS call dispatcher |
 | `0020H` | `RST_20` | ROM | Restart vector 20 — paged-RAM call dispatcher |
 | `0028H` | `RST_28` | ROM | Restart vector 28 — keyboard / display service |
+| `002CH` | `RSTC_VEC` | ROM | CPU RSTC interrupt vector (CTS edge). `C3 06 F8` =. Matches CPU |
 | `0030H` | `RST_30` | ROM | Restart vector 30 (unused) |
+| `0034H` | `RSTB_VEC` | ROM | CPU RSTB interrupt vector (RS-232 RxD start bit). `C3 48 F8` = |
 | `0038H` | `INT_IM1` | ROM | Maskable-interrupt entry (IM 1 mode) |
 | `0066H` | `NMI` | ROM | Non-maskable interrupt — 61 Hz keyboard / sound tick |
 | `0069H` | `CHAR_CLASSIFY` | ROM | Classify the next input character (CR → tokenise, '=' → buffer advance, else store) |
@@ -340,6 +342,8 @@ mirrors) at run time.
 | `6081H` | `SOUND_MODE_INIT` | ROM | SOUND-mode init: arm Timer-0 NMI for the audio bit-banger |
 | `609CH` | `SERIAL_TIMER_INIT` | ROM | EPROM3. 4 named callees (TABLE_IDX_GET ×2, SERIAL_BAUD_LOOKUP |
 | `6136H` | `TAPE_SYS_INIT` | ROM | Tape + system init: LCD_GATE_ALL_SET |
+| `618DH` | `IRQ_ISR_INSTALL` | ROM | Shared interrupt-controller programming + Timer ISR template install |
+| `61B6H` | `SOUND_MODE_RAM_SETUP` | ROM | SOUND-specific RAM init phase, the tape/baud-10 variant prologue of |
 | `626BH` | `LCD_GATE_ALL_SET` | ROM | Enables all three LCD column-gate flags in one call |
 | `6277H` | `NMI_HOOK_INSTALL` | ROM | Install one of the NMI hook templates into the NMI shadow |
 | `6288H` | `NMI_HOOK_TMPL_A` | ROM | Non-maskable interrupt hook template A (40 bytes, LDIR'd to F814H) |
@@ -350,7 +354,10 @@ mirrors) at run time.
 | `6300H` | `SERIAL_BAUD_TBL2` | ROM | Mirror of SERIAL_BAUD_TABLE used by the alt channel |
 | `63ABH` | `TAPE_MODE_CHK` | ROM | Return Z=1 if tape or terminal mode is active |
 | `63B7H` | `BAUD10_CHK` | ROM | Return Z=1 if the device is configured for baud setting 10 (9600) |
+| `63C3H` | `TIMER_ISR_TPL_BAUD10` | ROM | Timer ISR tpl baud10 |
 | `63C8H` | `SOUND_NMI_TICK` | ROM | Non-maskable interrupt sound tick: feeds phase counter F864H to tone handler 770EH |
+| `63D4H` | `TIMER_ISR_TPL_DEFAULT` | ROM | Timer ISR tpl default |
+| `63E5H` | `TIMER_ISR_TPL_EXT` | ROM | Timer ISR tpl ext |
 | `63E9H` | `NMI_ALTW_ENTRY` | ROM | Alt-warm non-maskable interrupt entry |
 | `6465H` | `BISYNC_TX_ENTRY` | ROM | Transmit-side entry from the EPROM2 F801>=5 dispatch. Drives the |
 | `6500H` | `LCD_COL_QUEUE` | ROM | Queue LCD column write |
@@ -582,6 +589,8 @@ mirrors) at run time.
 | `B42AH` | `RTC_TICK_POLL` | ROM | Watch the real-time clock for a tick and redraw the on-screen clock |
 | `B43AH` | `LCD_FONT` | ROM | LCD character font — standard 7-row ASCII glyphs |
 | `B6DAH` | `LCD_FONT2` | ROM | LCD character font — taller 9-row alternate glyphs (menus) |
+| `BA4FH` | `V24_RTS_FROM_MODE` | ROM | V24 RTS from mode |
+| `BE24H` | `IRQ_WARM_GATED_EI` | ROM | IRQ warm gated ei |
 | `DFB0H` | `RAM_KEY_BUF_WR_PTR` | RAM | Write-pointer (low byte) into the 32-byte circular keyboard input |
 | `DFB2H` | `RAM_KEY_BUF_RD_PTR` | RAM | Read-pointer (low byte) into the 32-byte circular keyboard input |
 | `E05CH` | `PRAM_STR_BUF` | RAM | Paged RAM string buffer start (dest of ALT_CHAR_OUT 11H path) |
@@ -693,8 +702,8 @@ mirrors) at run time.
 | `FDD6H` | `RAM_SCRATCH_FDD6` | RAM | Shared transient scratch slot |
 | `FDD9H` | `RAM_BLK_PTR` | RAM | Pointer to the current RAM-disk data block |
 | `FDFAH` | `RAM_MENU_REENTR` | RAM | Menu re-entrancy guard (L_7BF2H) |
-| `FDFBH` | `TIMER_AB_ISR` | RAM | Timer A/B common ISR entry (SOUND_DEV.md / 0xFDFB file) |
-| `FE0EH` | `TIMER_AB_ISR_END` | RAM | Timer A/B ISR exit (0xFE0E file) |
+| `FDFBH` | `TIMER_AB_ISR` | RAM | Timer A/B common ISR entry — RAM destination for the LDIR install |
+| `FE0EH` | `TIMER_AB_ISR_EXT` | RAM | Extended 37-byte block, RAM destination for the SECOND LDIR install |
 | `FE51H` | `RAM_FP_SCRATCH` | RAM | Floating point scratch area (used by POW_OP FLOAT_COPY) |
 | `FEF2H` | `RAM_KEY_CHAR_TBL` | RAM | Keyboard character lookup table (112 entries) |
 | `FFB4H` | `RAM_PROG_RUNNING` | RAM | BASIC program running flag (non-zero = program executing) |
