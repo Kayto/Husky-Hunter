@@ -1,0 +1,5 @@
+1 REM MEMSIZE.HBA
+2 REM Display memory size
+3 REM By Nicola Cowie 10/06/2026
+10 PRINT ((PEEK(63585)-128)*48)+64;"Kb"
+100 END
