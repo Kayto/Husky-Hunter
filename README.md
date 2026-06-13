@@ -136,6 +136,9 @@ Micro Live S02E02: https://www.youtube.com/watch?v=y1ZBr3NInow&t=739s
 Other Husky-related projects and resources on GitHub:
 
 * [NicolaCowie/HCOM](https://github.com/NicolaCowie/HCOM) — original HCOM PC-to-Husky file transfer software (v1.0). Source code in C and Assembly for Hunter 1 & 2, Hawk, Hunter 16 and FS2
+* [NicolaCowie/ROMDUMP](https://github.com/NicolaCowie/ROMDUMP) — Dump utility for Husky Hunter EPROM contents. Detects both 2 x 27C256 and early 6 x 27C64 EPROM configurations.
+* [NicolaCowie/ROMV](https://github.com/NicolaCowie/ROMV) — Hunter Basic Program to view contents of ROMS using Hunters memory paging.
+* [NicolaCowie/SerialComs](https://github.com/NicolaCowie/SerialComs) — Send and Inp for Win11 Console.
 * [sleepygecko/husky](https://github.com/sleepygecko/husky) — Husky Computers related information, HCOM WIN11 binaries, and Hunter 16 manual chapters
 * [TheEPROM9/Husky-Computer-Software](https://github.com/TheEPROM9/Husky-Computer-Software) — collected software for Husky computers. CP/M, DEMOS, HCOM, and MS-DOS utilities from the DVW Microelectronics Husky through to MS-DOS models
 * [TheEPROM9/Husky-Computer-ROM-Images](https://github.com/TheEPROM9/Husky-Computer-ROM-Images) — archive of ROM images pulled from Husky computers: Hunter, Hunter 16, Hunter 16-80, Hawk, FS2, FS3, and more
