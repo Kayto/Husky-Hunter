@@ -432,6 +432,8 @@ mirrors) at run time.
 | `74E5H` | `CHAR_INPUT_DISP` | ROM | Char input dispatcher (keyboard / serial routing) |
 | `7503H` | `KBD_CURSOR_DISP` | ROM | Display the keyboard-driven cursor |
 | `7662H` | `INPUT_WAIT_LOOP` | ROM | Input wait loop |
+| `76B5H` | `TAPE_TX_BIT_INIT` | ROM | Tape-transmit bit service: state init phase. XOR A |
+| `76CCH` | `TAPE_TX_BIT_LOOP` | ROM | Tape-transmit bit service: inner loop. Save SP at RAM_FONT_STAGE_BUF (RAM) |
 | `770EH` | `SOUND_STOP_CHK` | ROM | Pops return addr when sound finishes |
 | `7734H` | `TAPE_BAUD_PROG_INIT` | ROM | EPROM3. 3 named callees (TEST_MODE_FA56, KBD_CURSOR_DISP |
 | `779CH` | `DISP_KBD_CYCLE` | ROM | Display keyboard cycle |
@@ -590,7 +592,44 @@ mirrors) at run time.
 | `B43AH` | `LCD_FONT` | ROM | LCD character font — standard 7-row ASCII glyphs |
 | `B6DAH` | `LCD_FONT2` | ROM | LCD character font — taller 9-row alternate glyphs (menus) |
 | `BA4FH` | `V24_RTS_FROM_MODE` | ROM | V24 RTS from mode |
+| `BA60H` | `FONT_OVR_MARKER` | ROM | Font-overlay marker byte (=AAH). LDIR'd to E72AH by OVERLAY_RELOAD_BA60 |
+| `BA61H` | `FONT_WIN_STATE_INIT` | ROM | Font win state init |
+| `BA6DH` | `FONT_DISPATCH_2B27` | ROM | Font dispatch 2b27 |
+| `BA76H` | `FONT_WIN_OUT_E740` | ROM | WIN_CHAR_ROUTE first-call target (when font overlay is loaded). Runs |
+| `BA98H` | `FONT_PRAM_SCAN_TYPE0` | ROM | Font paged-RAM scan type0 |
+| `BAA9H` | `FONT_REC_KEY_MATCH` | ROM | Font rec key match |
+| `BAB6H` | `FONT_REC_INSERT_HL` | ROM | Font rec insert hl |
+| `BAFAH` | `FONT_LOAD_EAC5_PAGE0` | ROM | Font load eac5 page0 |
+| `BAFFH` | `FONT_COPY_9_BACK_A` | ROM | Font copy 9 back a |
+| `BB0DH` | `FONT_COPY_9_BACK_B` | ROM | Font copy 9 back b |
+| `BB19H` | `FONT_PAGE_RESTORE` | ROM | Paged-RAM page-switch helper — three entry points sharing the same |
+| `BB2BH` | `FONT_COPY_2_SKIP4_3` | ROM | Font copy 2 skip4 3 |
+| `BB45H` | `FONT_COPY_2_ZERO4_3` | ROM | Font copy 2 zero4 3 |
+| `BB64H` | `FONT_REC_FLAG_DISP` | ROM | Font rec flag display |
+| `BBEBH` | `FONT_HL_STEP_DE_BC` | ROM | Font hl step de bc |
+| `BBF9H` | `FONT_PRAM_LEN_PUSH` | ROM | Font paged-RAM len push |
+| `BC09H` | `FONT_PRAM_MODE_INIT_JR` | ROM | Font paged-RAM mode init jr |
+| `BC2CH` | `FONT_PRAM_LEN_CMP` | ROM | Font paged-RAM len cmp |
+| `BC40H` | `FONT_HL_DEREF_AF` | ROM | Font hl deref af |
+| `BC47H` | `FONT_REC_WRITE_DISP` | ROM | Font rec write display |
+| `BC6FH` | `FONT_TAIL_TO_104D` | ROM | Font tail to 104d |
+| `BC75H` | `FONT_EXPR_MODE_DISPATCH` | ROM | Font expression mode dispatch |
 | `BE24H` | `IRQ_WARM_GATED_EI` | ROM | IRQ warm gated ei |
+| `BE2CH` | `LDIR_THEN_WARM_EI` | ROM | Ldir then warm ei |
+| `BE33H` | `FONT_PAGED_CALL_E487` | ROM | Font paged call e487 |
+| `BE3BH` | `FONT_PRAM_CTX_INIT_LDDR` | ROM | Font paged-RAM ctx init lddr |
+| `BE6BH` | `FONT_TOKEN_PARSE` | ROM | Font token parse |
+| `BEE6H` | `FONT_F400_EQ4_CHK` | ROM | Font f400 eq4 chk |
+| `BEECH` | `FONT_PRAM_CTX_INSERT_01` | ROM | Font paged-RAM ctx insert 01 |
+| `BEFBH` | `FONT_PRAM_F400_DISP` | ROM | Font paged-RAM f400 display |
+| `BF1AH` | `FONT_PRAM_LDDR_INSERT` | ROM | Font paged-RAM lddr insert |
+| `BF5FH` | `FONT_LDDR_WRAP` | ROM | Font lddr wrap |
+| `BF64H` | `FONT_PAGED_CALL_EC24` | ROM | Font paged call ec24 |
+| `BF6DH` | `FONT_PAGED_CALL_EC29` | ROM | Font paged call ec29 |
+| `BF75H` | `FONT_PRAM_CTX_DIFF` | ROM | Font paged-RAM ctx diff |
+| `BF81H` | `FONT_LDIR128_AND_EC24` | ROM | Font ldir128 and ec24 |
+| `BFBCH` | `FONT_WIN_CURSOR_EC86` | ROM | WIN_CHAR_ROUTE second-call target (when font overlay is loaded) |
+| `BFF2H` | `FONT_KBD_INT_POLL` | ROM | Kbd-activity poll inside the font-overlay cluster. Body |
 | `DFB0H` | `RAM_KEY_BUF_WR_PTR` | RAM | Write-pointer (low byte) into the 32-byte circular keyboard input |
 | `DFB2H` | `RAM_KEY_BUF_RD_PTR` | RAM | Read-pointer (low byte) into the 32-byte circular keyboard input |
 | `E05CH` | `PRAM_STR_BUF` | RAM | Paged RAM string buffer start (dest of ALT_CHAR_OUT 11H path) |
