@@ -97,18 +97,18 @@ mirrors) at run time.
 | `0120H` | `COLD_START` | ROM | Cold start: clear RAM and jump into the OS init |
 | `0135H` | `WARM_START_CHK` | ROM | Decide whether this boot is warm or cold |
 | `015FH` | `EPROM0_TOKEN_TBL` | ROM | BASIC keyword suffix lookup table (data) |
-| `0180H` | `NMI_TICK_ISR` | ROM | NMI handler: 61 Hz tick — start of the NMI stub bank |
-| `0188H` | `NMI_STUB_B` | ROM | NMI handler: delay-count loop into paged RAM |
-| `0196H` | `NMI_STUB_C` | ROM | NMI handler: snapshot Port B/C inputs and arm the interrupt mask |
-| `01C6H` | `NMI_STUB_D` | ROM | NMI handler: Timer-B high-byte read path |
-| `01DBH` | `NMI_STUB_E` | ROM | NMI handler: re-arm Timer B to max count |
-| `01ECH` | `NMI_MAIN_TICK` | ROM | NMI handler: main 61 Hz body (stack guard + service calls) |
-| `023BH` | `NMI_KBD_BUF` | ROM | NMI handler: store a keyboard character into the input slot |
-| `0241H` | `NMI_TIMER_PROG` | ROM | NMI handler: reprogram Timer B from the saved count pair |
-| `0257H` | `NMI_TIMER_READ` | ROM | NMI handler: read the high byte of Timer B and re-enable interrupts |
-| `025EH` | `NMI_PORTC_CTR` | ROM | NMI handler: Port C bit-2 edge counter / dispatch |
-| `028EH` | `NMI_KBD_SCAN` | ROM | NMI handler: full keyboard matrix scan |
-| `02BDH` | `NMI_FRAG_F992` | ROM | NMI handler: tiny dispatch fragment |
+| `0180H` | `TIMER_AB_TICK_ISR` | ROM | NMI handler: 61 Hz tick — start of the NMI stub bank |
+| `0188H` | `TIMER_AB_STUB_B` | ROM | NMI handler: delay-count loop into paged RAM |
+| `0196H` | `TIMER_AB_STUB_C` | ROM | NMI handler: snapshot Port B/C inputs and arm the interrupt mask |
+| `01C6H` | `TIMER_AB_STUB_D` | ROM | NMI handler: Timer-B high-byte read path |
+| `01DBH` | `TIMER_AB_STUB_E` | ROM | NMI handler: re-arm Timer B to max count |
+| `01ECH` | `TIMER_AB_MAIN_TICK` | ROM | NMI handler: main 61 Hz body (stack guard + service calls) |
+| `023BH` | `TIMER_AB_SET_TX_START` | ROM | NMI handler: store a keyboard character into the input slot |
+| `0241H` | `TIMER_AB_TIMERB_PROG` | ROM | NMI handler: reprogram Timer B from the saved count pair |
+| `0257H` | `TIMER_AB_TIMERB_READ` | ROM | NMI handler: read the high byte of Timer B and re-enable interrupts |
+| `025EH` | `TIMER_AB_DISPATCH` | ROM | NMI handler: Port C bit-2 edge counter / dispatch |
+| `028EH` | `TIMER_AB_KBD_SCAN` | ROM | NMI handler: full keyboard matrix scan |
+| `02BDH` | `PAGE_SELECT_A` | ROM | NMI handler: tiny dispatch fragment |
 | `02C3H` | `RST18_ADDR_TBL` | ROM | Address table for RST 18 BIOS-call targets |
 | `02F3H` | `RST20_ADDR_TBL` | ROM | Address table for RST 20 paged-RAM-call targets |
 | `0356H` | `SYS_OVERLAY_LOAD` | ROM | DEMOS .SYS overlay loader. Entered with DE → 11-char filename string |
@@ -146,11 +146,19 @@ mirrors) at run time.
 | `11D2H` | `LINE_NUM_FETCH` | ROM | BASIC line-number parser / end-of-program detect |
 | `121CH` | `LIST_PRINT_LINE` | ROM | Print one detokenised BASIC line |
 | `1245H` | `LIST_SCAN_LOOP` | ROM | LIST main scan loop: check token 1BH/1FH (skip) |
+| `12B5H` | `PROG_TEXT_SCAN` | ROM | Paged BASIC program-text scan primitive, shared by |
+| `12C7H` | `SCAN_KW_EVAL_EXPR` | ROM | Scan keyword then evaluate expression |
 | `12D1H` | `PROG_TEXT_FETCH` | ROM | Safe BASIC program-text fetch wrapper that |
+| `136EH` | `PROG_FETCH_OR_END` | ROM | Run-loop variant of PROG_TEXT_FETCH |
 | `1417H` | `BASIC_PEEK` | ROM | Peek the current BASIC token without advancing |
 | `1473H` | `KWD_DISPATCH` | ROM | Dispatch a BASIC keyword via its jump table |
 | `147DH` | `EXPR_INIT` | ROM | Initialise the expression output buffer pointer |
+| `1486H` | `PARSE_EXPR_BUF_RESET` | ROM | Parse-expr entry (full reset) |
+| `148CH` | `PARSE_EXPR_BUF` | ROM | Parse-expr entry (scratch buffer): clear F871H |
+| `1496H` | `PARSE_EXPR_TYPED` | ROM | Parse an expression then dispatch by result type |
 | `1648H` | `IS_VALUE_TOKEN` | ROM | Return Z=1 if the current BASIC token is a value (string/number) |
+| `16E8H` | `EVAL_SUBEXPR_RPAREN_KEEPHL` | ROM | HL-preserving wrapper of EVAL_SUBEXPR_RPAREN |
+| `16EEH` | `EVAL_SUBEXPR_RPAREN` | ROM | Evaluate normalised sub-expression then consume ')' |
 | `16F7H` | `EVAL_SUBEXPR_NORM` | ROM | EVAL_SUBEXPR then — eval a sub-expression + normalise |
 | `16FDH` | `EVAL_SUBEXPR` | ROM | Evaluate an expression with the evaluator context saved/restored |
 | `1722H` | `SCAN_RPAREN` | ROM | Scan for a closing ')' |
@@ -166,6 +174,7 @@ mirrors) at run time.
 | `1C4CH` | `PRINT_SPACE` | ROM | Output a single space character |
 | `1DA1H` | `STMT_SEP_OR_END` | ROM | EPROM0. Statement separator / end check. ` |
 | `1DB1H` | `PEEK_NEXT_TOK_CP90` | ROM | Peek the *next* token (alt HL+1, no advance) and CP 90H — lookahead test |
+| `1DCBH` | `PARSE_SIGN` | ROM | Parse an optional leading sign |
 | `1E31H` | `READ_DATA_VARLIST` | ROM | EPROM0. 4 named callees (PARSE_DEC_INT, CHK_COMMA_FETCH |
 | `1E7FH` | `EVAL_NORM_ARG` | ROM | Evaluate an expression and normalise the result |
 | `1E9DH` | `CHK_COMMA_FETCH` | ROM | Require a comma in the BASIC source |
@@ -174,6 +183,7 @@ mirrors) at run time.
 | `1EAEH` | `PEEK_TOK_CP30` | ROM | Peek the current token (alt HL) and CP 30H ('0') — token classify |
 | `1EB6H` | `CHK_COMMA` | ROM | Check for a comma in argument-list parsing |
 | `1EBCH` | `EVAL_EXPR` | ROM | Main BASIC expression evaluator entry point |
+| `1EC7H` | `EVAL_EXPR_NOSEED` | ROM | Second entry into EVAL_EXPR, skipping the LD A,R RND |
 | `1FFAH` | `EXPR_CLOSE_PAREN` | ROM | Close parenthesised expression |
 | `205BH` | `TOKENIZE_LINE` | ROM | Encode an ASCII BASIC line into stored token form |
 | `2156H` | `EPROM1_TOKEN_TBL` | ROM | BASIC token text table (data) |
@@ -322,7 +332,7 @@ mirrors) at run time.
 | `4E76H` | `KBD_CHAR_PROC` | ROM | Process a decoded keyboard character |
 | `5040H` | `KBD_PORT_DETECT` | ROM | Detect the keyboard port (skip init if already done) |
 | `50E5H` | `KBD_KEY_FIND` | ROM | Find a key code in the 112-entry key-character table |
-| `51DEH` | `SERIAL_CHAR_TICK` | ROM | Serial/terminal char input state machine (called from NMI_MAIN_TICK) |
+| `51DEH` | `SERIAL_CHAR_TICK` | ROM | Serial/terminal char input state machine (called from TIMER_AB_MAIN_TICK) |
 | `539EH` | `KBD_POLL` | ROM | Keyboard polling helper (calls into the paged-RAM GETKEY) |
 | `53A8H` | `LINE_EDITOR` | ROM | Full line input + callback dispatch |
 | `53B6H` | `SERIAL_VEC_DISPATCH` | ROM | Serial input vector dispatch (gated on the comms-mode flag) |
@@ -358,7 +368,7 @@ mirrors) at run time.
 | `63C8H` | `SOUND_NMI_TICK` | ROM | Non-maskable interrupt sound tick: feeds phase counter F864H to tone handler 770EH |
 | `63D4H` | `TIMER_ISR_TPL_DEFAULT` | ROM | Timer ISR tpl default |
 | `63E5H` | `TIMER_ISR_TPL_EXT` | ROM | Timer ISR tpl ext |
-| `63E9H` | `NMI_ALTW_ENTRY` | ROM | Alt-warm non-maskable interrupt entry |
+| `63E9H` | `TIMER_AB_ALTW_ENTRY` | ROM | Alt-warm timer-ISR entry (in TIMER_ISR_TPL_EXT) |
 | `6465H` | `BISYNC_TX_ENTRY` | ROM | Transmit-side entry from the EPROM2 F801>=5 dispatch. Drives the |
 | `6500H` | `LCD_COL_QUEUE` | ROM | Queue LCD column write |
 | `6523H` | `LCD_COL_STORE` | ROM | Store col A to (RAM) |
